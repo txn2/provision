@@ -16,7 +16,6 @@ import (
 	"flag"
 	"os"
 
-	"github.com/gin-gonic/gin"
 	"github.com/txn2/ack"
 	"github.com/txn2/provision"
 )
@@ -33,7 +32,7 @@ func main() {
 
 	// Provision API
 	provApi := provision.NewApi(&provision.Config{
-		Logger:        server.Logger, // pre configured zap logger
+		Logger:        server.Logger,
 		HttpClient:    server.Client,
 		ElasticServer: *esServer,
 	})
@@ -42,25 +41,13 @@ func main() {
 	server.Router.POST("/account", provApi.UpsertAccountHandler)
 
 	// Get an account
-	server.Router.GET("/account/:id", func(c *gin.Context) {
-		ak := ack.Gin(c)
-		ak.SetPayloadType("Message")
-		ak.GinSend("Get an account.")
-	})
+	server.Router.GET("/account/:id", provApi.GetAccountHandler)
 
 	// Upsert a user
-	server.Router.POST("/user", func(c *gin.Context) {
-		ak := ack.Gin(c)
-		ak.SetPayloadType("Message")
-		ak.GinSend("Upsert user.")
-	})
+	server.Router.POST("/user", provApi.UpsertUserHandler)
 
 	// Get a user
-	server.Router.GET("/user/:id", func(c *gin.Context) {
-		ak := ack.Gin(c)
-		ak.SetPayloadType("Message")
-		ak.GinSend("Upsert user.")
-	})
+	server.Router.GET("/user/:id", provApi.GetUserHandler)
 
 	// run provisioning server
 	server.Run()

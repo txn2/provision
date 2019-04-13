@@ -48,3 +48,39 @@ curl -X POST \
 
 View data in kibana:
 - http://localhost:5601
+
+#### Get Account
+
+```bash
+curl http://localhost:8080/account/xorg
+```
+
+### User
+
+#### Upsert User
+
+```bash
+curl -X POST \
+  http://localhost:8080/user \
+  -d '{
+	"id": "sysop",
+	"description": "Global system operator",
+	"display_name": "System Operator",
+	"active": true,
+	"sysop": true,
+	"password": "JntGihgkGRvFKmb74XgUwn7bcYpb3bPtWE8gEVTpvChEqpsFwq",
+	"sections_all": false,
+	"sections": [],
+	"accounts": [],
+	"admin_accounts": []
+}'
+```
+
+View data in kibana:
+- http://localhost:5601
+
+#### Get User
+
+```bash
+curl http://localhost:8080/user/sysop
+```

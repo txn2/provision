@@ -19,7 +19,7 @@ require (
 	github.com/txn2/ack v1.8.2
 	github.com/txn2/es v1.3.3
 	go.uber.org/zap v1.9.1
-	golang.org/x/crypto v0.0.0-20190411191339-88737f569e3a // indirect
+	golang.org/x/crypto v0.0.0-20190411191339-88737f569e3a
 	golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3 // indirect
 	golang.org/x/sync v0.0.0-20190412183630-56d357773e84 // indirect
 	golang.org/x/sys v0.0.0-20190412213103-97732733099d // indirect

@@ -114,3 +114,27 @@ func (a *Api) GetAccount(id string) (int, *AccountResult, error) {
 
 	return code, accountResult, nil
 }
+
+// GetAccountHandler gets an account by ID
+func (a *Api) GetAccountHandler(c *gin.Context) {
+	ak := ack.Gin(c)
+
+	id := c.Param("id")
+	code, accountResult, err := a.GetAccount(id)
+	if err != nil {
+		a.Logger.Error("EsError", zap.Error(err))
+		ak.SetPayloadType("EsError")
+		ak.SetPayload("Error communicating with database.")
+		ak.GinErrorAbort(500, "EsError", err.Error())
+		return
+	}
+
+	if code >= 400 && code < 500 {
+		ak.SetPayload("Account " + id + " not found.")
+		ak.GinErrorAbort(404, "AccountNotFound", "Account not found")
+		return
+	}
+
+	ak.SetPayloadType("AccountResult")
+	ak.GinSend(accountResult)
+}

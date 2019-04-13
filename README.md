@@ -4,7 +4,7 @@
 
 ## Configuration
 
-Configuration is inherited from ![txn2/ack](https://github.com/txn2/ack#configuration). The
+Configuration is inherited from [txn2/ack](https://github.com/txn2/ack#configuration). The
 cfollowing configuration is specific to **provision**:
 
 | Flag | Environment Variable | Description  |

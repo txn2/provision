@@ -4,9 +4,15 @@
 
 ## Development
 
-Testing using Elasticsearch Docker container:
-
+Testing using Elasticsearch and Kibana in docker compose:
 ```bash
-docker run --rm -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:7.0.0
+docker-compose up
 ```
 
+Run for source:
+```bash
+go run ./cmd/provisison.go --esServer="http://localhost:9200"
+```
+
+View data in kibana:
+- http://localhost:5601

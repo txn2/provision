@@ -13,21 +13,33 @@
 package main
 
 import (
+	"flag"
+	"os"
+
 	"github.com/gin-gonic/gin"
 	"github.com/txn2/ack"
+	"github.com/txn2/provision"
+)
+
+var (
+	elasticServerEnv = getEnv("ELASTIC_SERVER", "http://elasticsearch:9200")
 )
 
 func main() {
 
+	esServer := flag.String("esServer", elasticServerEnv, "Elasticsearch Server")
+
 	server := ack.NewServer()
 
+	// Provision API
+	provApi := provision.NewApi(&provision.Config{
+		Logger:        server.Logger, // pre configured zap logger
+		HttpClient:    server.Client,
+		ElasticServer: *esServer,
+	})
 
 	// Upsert an account
-	server.Router.POST("/account", func(c *gin.Context) {
-		ak := ack.Gin(c)
-		ak.SetPayloadType("Message")
-		ak.GinSend("Upsert account.")
-	})
+	server.Router.POST("/account", provApi.UpsertAccountHandler)
 
 	// Get an account
 	server.Router.GET("/account/:id", func(c *gin.Context) {
@@ -52,4 +64,15 @@ func main() {
 
 	// run provisioning server
 	server.Run()
+}
+
+// getEnv gets an environment variable or sets a default if
+// one does not exist.
+func getEnv(key, fallback string) string {
+	value := os.Getenv(key)
+	if len(value) == 0 {
+		return fallback
+	}
+
+	return value
 }

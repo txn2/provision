@@ -14,5 +14,28 @@ Run for source:
 go run ./cmd/provisison.go --esServer="http://localhost:9200"
 ```
 
+## Examples
+
+### Account
+
+#### Upsert Account
+
+```bash
+curl -X POST \
+  http://localhost:8080/account \
+  -d '{
+	"id": "xorg",
+	"description": "Organization X is an IOT data collection agency.",
+	"display_name": "Organization X",
+	"active": true,
+    "modules": [
+        "telematics",
+        "wx",
+        "data_science",
+        "gpu"
+    ]
+}'
+```
+
 View data in kibana:
 - http://localhost:5601

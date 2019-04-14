@@ -30,7 +30,7 @@ var (
 func main() {
 
 	esServer := flag.String("esServer", elasticServerEnv, "Elasticsearch Server")
-	systemPrefix := flag.String("systemPrefix", systemPrefixEnv, "Prefix for system indexes.")
+	systemPrefix := flag.String("systemPrefix", systemPrefixEnv, "Prefix for system indices.")
 
 	server := ack.NewServer()
 

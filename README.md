@@ -7,9 +7,10 @@
 Configuration is inherited from [txn2/ack](https://github.com/txn2/ack#configuration). The
 following configuration is specific to **provision**:
 
-| Flag | Environment Variable | Description  |
-|:-----|:---------------------|:-------------|
-| -esServer     | ELASTIC_SERVER                     | Elasticsearch Server (default "http://elasticsearch:9200") |
+| Flag          | Environment Variable | Description                                                |
+|:--------------|:---------------------|:-----------------------------------------------------------|
+| -esServer     | ELASTIC_SERVER       | Elasticsearch Server (default "http://elasticsearch:9200") |
+| -systemPrefix | SYSTEM_PREFIX        | Prefix for system indices. (default "system_")             |
 
 ## Development
 

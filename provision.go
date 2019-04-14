@@ -16,6 +16,9 @@
 package provision
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/txn2/ack"
 	"github.com/txn2/es"
 	"go.uber.org/zap"
@@ -42,7 +45,7 @@ type Api struct {
 }
 
 // NewApi
-func NewApi(cfg *Config) *Api {
+func NewApi(cfg *Config) (*Api, error) {
 	a := &Api{Config: cfg}
 
 	if a.Elastic == nil {
@@ -58,5 +61,39 @@ func NewApi(cfg *Config) *Api {
 		cfg.IdxPrefix = "system_"
 	}
 
-	return a
+	// send index mappings for user
+	err := a.SendEsMapping(GetUserMapping(cfg.IdxPrefix))
+	if err != nil {
+		return nil, err
+	}
+
+	// send index mappings for account
+	err = a.SendEsMapping(GetAccountMapping(cfg.IdxPrefix))
+	if err != nil {
+		return nil, err
+	}
+
+	return a, nil
+}
+
+// SetupUserIndexTemplate
+func (a *Api) SendEsMapping(mapping es.IndexTemplate) error {
+
+	a.Logger.Info("Sending template",
+		zap.String("type", "SendEsMapping"),
+		zap.String("mapping", mapping.Name),
+	)
+
+	code, esResult, err := a.Elastic.PutObj(fmt.Sprintf("_template/%s", mapping.Name), mapping.Template)
+	if err != nil {
+		a.Logger.Error("Got error sending template", zap.Error(err))
+		return err
+	}
+
+	if code != 200 {
+		a.Logger.Error("Got code", zap.Int("code", code), zap.String("EsResult", esResult.ResultType))
+		return errors.New("Error setting up " + mapping.Name + " template, got code " + string(code))
+	}
+
+	return err
 }

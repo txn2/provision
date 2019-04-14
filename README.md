@@ -46,9 +46,6 @@ curl -X POST \
 }'
 ```
 
-View data in kibana:
-- http://localhost:5601
-
 #### Get Account
 
 ```bash
@@ -75,9 +72,6 @@ curl -X POST \
 	"admin_accounts": []
 }'
 ```
-
-View data in kibana:
-- http://localhost:5601
 
 #### Get User
 

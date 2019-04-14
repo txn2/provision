@@ -16,25 +16,41 @@ import (
 	"flag"
 	"os"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/txn2/ack"
 	"github.com/txn2/provision"
 )
 
 var (
 	elasticServerEnv = getEnv("ELASTIC_SERVER", "http://elasticsearch:9200")
+	systemPrefixEnv  = getEnv("SYSTEM_PREFIX", "system_")
 )
 
 func main() {
 
 	esServer := flag.String("esServer", elasticServerEnv, "Elasticsearch Server")
+	systemPrefix := flag.String("systemPrefix", systemPrefixEnv, "Prefix for system indexes.")
 
 	server := ack.NewServer()
 
 	// Provision API
-	provApi := provision.NewApi(&provision.Config{
+	provApi, err := provision.NewApi(&provision.Config{
 		Logger:        server.Logger,
 		HttpClient:    server.Client,
 		ElasticServer: *esServer,
+		IdxPrefix:     *systemPrefix,
+	})
+	if err != nil {
+		server.Logger.Fatal("failure to instantiate the provisioning API: " + err.Error())
+		os.Exit(1)
+	}
+
+	// system prefix
+	server.Router.GET("/prefix", func(c *gin.Context) {
+		ak := ack.Gin(c)
+		ak.SetPayloadType("Prefix")
+		ak.GinSend(provApi.Config.IdxPrefix)
 	})
 
 	// Upsert an account
@@ -48,6 +64,9 @@ func main() {
 
 	// Get a user
 	server.Router.GET("/user/:id", provApi.GetUserHandler)
+
+	// Auth a user
+	server.Router.POST("/authUser", provApi.AuthUserHandler)
 
 	// run provisioning server
 	server.Run()

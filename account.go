@@ -25,7 +25,7 @@ import (
 	"go.uber.org/zap"
 )
 
-const IxdAccount = "account"
+const IdxAccount = "account"
 
 // AccessKey
 type AccessKey struct {
@@ -94,7 +94,7 @@ func (a *Api) UpsertAccount(account *Account) (int, es.Result, error) {
 		account.OrgId = accountRes.Source.OrgId
 	}
 
-	return a.Elastic.PutObj(fmt.Sprintf("%s/_doc/%s", a.IdxPrefix+IxdAccount, account.Id), account)
+	return a.Elastic.PutObj(fmt.Sprintf("%s/_doc/%s", a.IdxPrefix+IdxAccount, account.Id), account)
 }
 
 // GetAccount
@@ -102,7 +102,7 @@ func (a *Api) GetAccount(id string) (int, *AccountResult, error) {
 
 	accountResult := &AccountResult{}
 
-	code, ret, err := a.Elastic.Get(fmt.Sprintf("%s/_doc/%s", a.IdxPrefix+IxdAccount, id))
+	code, ret, err := a.Elastic.Get(fmt.Sprintf("%s/_doc/%s", a.IdxPrefix+IdxAccount, id))
 	if err != nil {
 		return code, accountResult, err
 	}

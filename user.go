@@ -20,17 +20,19 @@ import (
 	"errors"
 	"fmt"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/txn2/ack"
 	"github.com/txn2/es"
 	"go.uber.org/zap"
-	"golang.org/x/crypto/bcrypt"
 )
 
 const IdxUser = "user"
 const EncCost = 12
 
-// User defines a DCP user object
+// User defines a user object
+// User defines a user object
 type User struct {
 	Id            string   `json:"id"`
 	Description   string   `json:"description"`
@@ -110,6 +112,51 @@ func (a *Api) UpsertUserHandler(c *gin.Context) {
 	ak.GinSend(esResult)
 }
 
+// GetUser
+func (a *Api) GetUser(id string) (int, *UserResult, error) {
+
+	userResult := &UserResult{}
+
+	code, ret, err := a.Elastic.Get(fmt.Sprintf("%s/_doc/%s", a.IdxPrefix+IdxUser, id))
+	if err != nil {
+		a.Logger.Error("EsError", zap.Error(err))
+		return code, userResult, err
+	}
+
+	err = json.Unmarshal(ret, userResult)
+	if err != nil {
+		return code, userResult, err
+	}
+
+	return code, userResult, nil
+}
+
+// GetUserHandler gets a user by ID
+func (a *Api) GetUserHandler(c *gin.Context) {
+	ak := ack.Gin(c)
+
+	id := c.Param("id")
+	code, userResult, err := a.GetUser(id)
+	if err != nil {
+		a.Logger.Error("EsError", zap.Error(err))
+		ak.SetPayloadType("EsError")
+		ak.SetPayload("Error communicating with database.")
+		ak.GinErrorAbort(500, "EsError", err.Error())
+		return
+	}
+
+	userResult.Source.Password = "REDACTED"
+
+	if code >= 400 && code < 500 {
+		ak.SetPayload("User " + id + " not found.")
+		ak.GinErrorAbort(404, "UserNotFound", "User not found")
+		return
+	}
+
+	ak.SetPayloadType("UserResult")
+	ak.GinSend(userResult)
+}
+
 // AuthUser authenticates a user with bt id and password
 func (a *Api) AuthUser(auth Auth) (bool, bool, error) {
 
@@ -169,51 +216,6 @@ func (a *Api) AuthUserHandler(c *gin.Context) {
 	ak.GinErrorAbort(400, "AuthFailure", "Bad password.")
 }
 
-// GetUser
-func (a *Api) GetUser(id string) (int, *UserResult, error) {
-
-	userResult := &UserResult{}
-
-	code, ret, err := a.Elastic.Get(fmt.Sprintf("%s/_doc/%s", a.IdxPrefix+IdxUser, id))
-	if err != nil {
-		a.Logger.Error("EsError", zap.Error(err))
-		return code, userResult, err
-	}
-
-	err = json.Unmarshal(ret, userResult)
-	if err != nil {
-		return code, userResult, err
-	}
-
-	return code, userResult, nil
-}
-
-// GetUserHandler gets a user by ID
-func (a *Api) GetUserHandler(c *gin.Context) {
-	ak := ack.Gin(c)
-
-	id := c.Param("id")
-	code, userResult, err := a.GetUser(id)
-	if err != nil {
-		a.Logger.Error("EsError", zap.Error(err))
-		ak.SetPayloadType("EsError")
-		ak.SetPayload("Error communicating with database.")
-		ak.GinErrorAbort(500, "EsError", err.Error())
-		return
-	}
-
-	userResult.Source.Password = "REDACTED"
-
-	if code >= 400 && code < 500 {
-		ak.SetPayload("User " + id + " not found.")
-		ak.GinErrorAbort(404, "UserNotFound", "User not found")
-		return
-	}
-
-	ak.SetPayloadType("UserResult")
-	ak.GinSend(userResult)
-}
-
 // CheckEncryptPassword checks and encrypts the password inthe user
 // object.
 func (u *User) CheckEncryptPassword(api *Api) error {
@@ -233,13 +235,13 @@ func (u *User) CheckEncryptPassword(api *Api) error {
 		}
 
 		if code >= 500 {
-			return errors.New("bad response from Es while looking up user")
+			return errors.New("Bad response from Es while looking up user.")
 		}
 	}
 
 	// check the password
 	if len(u.Password) < 10 {
-		return errors.New("password must be over ten characters")
+		return errors.New("Password must be over ten characters.")
 	}
 
 	// encrypt the password

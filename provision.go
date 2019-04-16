@@ -19,7 +19,13 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/txn2/token"
+
+	"github.com/gin-gonic/gin"
 	"github.com/txn2/ack"
+
+	"github.com/txn2/micro"
+
 	"github.com/txn2/es"
 	"go.uber.org/zap"
 )
@@ -27,7 +33,7 @@ import (
 // Config
 type Config struct {
 	Logger     *zap.Logger
-	HttpClient *ack.Client
+	HttpClient *micro.Client
 
 	// used for communication with Elasticsearch
 	// if nil, one will be created
@@ -37,6 +43,9 @@ type Config struct {
 	// used to prefix the user and account indexes IdxPrefix_user, IdxPrefix_account
 	// defaults to system.
 	IdxPrefix string
+
+	// pre-configured from server (txn2/micro)
+	Token *token.Jwt
 }
 
 // Api
@@ -96,4 +105,11 @@ func (a *Api) SendEsMapping(mapping es.IndexTemplate) error {
 	}
 
 	return err
+}
+
+// PrefixHandler
+func (a *Api) PrefixHandler(c *gin.Context) {
+	ak := ack.Gin(c)
+	ak.SetPayloadType("Prefix")
+	ak.GinSend(a.Config.IdxPrefix)
 }

@@ -20,30 +20,29 @@ import (
 	"errors"
 	"fmt"
 
-	"golang.org/x/crypto/bcrypt"
-
 	"github.com/gin-gonic/gin"
 	"github.com/txn2/ack"
 	"github.com/txn2/es"
 	"go.uber.org/zap"
+	"golang.org/x/crypto/bcrypt"
 )
 
 const IdxUser = "user"
 const EncCost = 12
+const RedactMsg = "REDACTED"
 
 // User defines a user object
-// User defines a user object
 type User struct {
-	Id            string   `json:"id"`
-	Description   string   `json:"description"`
-	DisplayName   string   `json:"display_name"`
-	Active        bool     `json:"active"`
-	Sysop         bool     `json:"sysop"`
-	Password      string   `json:"password"`
-	Sections      []string `json:"sections"`
-	SectionsAll   bool     `json:"sections_all"`
-	Accounts      []string `json:"accounts"`
-	AdminAccounts []string `json:"admin_accounts"`
+	Id            string   `json:"id" mapstructure:"id"`
+	Description   string   `json:"description" mapstructure:"description"`
+	DisplayName   string   `json:"display_name" mapstructure:"display_name"`
+	Active        bool     `json:"active" mapstructure:"active"`
+	Sysop         bool     `json:"sysop" mapstructure:"sysop"`
+	Password      string   `json:"password" mapstructure:"password"`
+	Sections      []string `json:"sections" mapstructure:"sections"`
+	SectionsAll   bool     `json:"sections_all" mapstructure:"sections_all"`
+	Accounts      []string `json:"accounts" mapstructure:"accounts"`
+	AdminAccounts []string `json:"admin_accounts" mapstructure:"admin_accounts"`
 }
 
 // UserResult returned from Elastic
@@ -52,16 +51,16 @@ type UserResult struct {
 	Source User `json:"_source"`
 }
 
+// UserTokenResult
+type UserTokenResult struct {
+	User  User   `json:"user"`
+	Token string `json:"token"`
+}
+
 // Auth for authenticating users
 type Auth struct {
 	Id       string `json:"id"`
 	Password string `json:"password"`
-}
-
-// AccessCheck is used to configure an access check
-type AccessCheck struct {
-	Sections []string `json:"sections"`
-	Accounts []string `json:"accounts"`
 }
 
 // UpsertUser inserts or updates a user record. Elasticsearch
@@ -145,7 +144,7 @@ func (a *Api) GetUserHandler(c *gin.Context) {
 		return
 	}
 
-	userResult.Source.Password = "REDACTED"
+	userResult.Source.Password = RedactMsg
 
 	if code >= 400 && code < 500 {
 		ak.SetPayload("User " + id + " not found.")
@@ -157,33 +156,34 @@ func (a *Api) GetUserHandler(c *gin.Context) {
 	ak.GinSend(userResult)
 }
 
-// AuthUser authenticates a user with bt id and password
-func (a *Api) AuthUser(auth Auth) (bool, bool, error) {
+// AuthUser authenticates a user with id and password
+func (a *Api) AuthUser(auth Auth) (*UserResult, bool, error) {
 
 	code, userResult, err := a.GetUser(auth.Id)
 	if err != nil {
 		a.Logger.Error("EsError", zap.Error(err))
-		return false, false, err
+		return nil, false, err
 	}
 
 	if code >= 400 && code < 500 {
 		a.Logger.Warn("User " + auth.Id + " not found")
-		return false, false, nil
+		return nil, false, nil
 	}
 
 	if code >= 500 {
 		a.Logger.Error("Received 500 code from database.")
-		return false, false, errors.New("received 500 code from database")
+		return nil, false, errors.New("received 500 code from database")
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(userResult.Source.Password), []byte(auth.Password))
 	if err != nil {
-		return true, false, nil
+		return userResult, false, nil
 	}
 
-	return true, true, nil
+	return userResult, true, nil
 }
 
+// AuthUserHandler
 func (a *Api) AuthUserHandler(c *gin.Context) {
 	ak := ack.Gin(c)
 
@@ -194,35 +194,53 @@ func (a *Api) AuthUserHandler(c *gin.Context) {
 		return
 	}
 
-	found, ok, err := a.AuthUser(*auth)
+	foundUser, ok, err := a.AuthUser(*auth)
 	if err != nil {
 		a.Logger.Error("Auth error", zap.Error(err))
 		ak.GinErrorAbort(500, "AuthError", err.Error())
 		return
 	}
 
-	if !found {
+	if foundUser == nil {
 		ak.SetPayloadType("AuthFailResult")
-		ak.GinErrorAbort(404, "AuthFailure", "User account not found.")
+		ak.GinErrorAbort(401, "AuthFailure", "User account not found.")
 		return
 	}
+
+	foundUser.Source.Password = RedactMsg
 
 	if ok {
-		ak.SetPayloadType("AuthResult")
-		ak.GinSend(true)
+		tkn, err := a.Config.Token.GetToken(foundUser.Source)
+		if err != nil {
+			a.Logger.Error("TokenFailResult", zap.Error(err))
+			ak.SetPayloadType("TokenFailResult")
+			ak.GinErrorAbort(401, "AuthFailure", "Filed to generate token.")
+			return
+		}
+
+		if c.Query("raw") == "true" {
+			c.Data(200, "text/plain", []byte(tkn))
+			return
+		}
+
+		ak.SetPayloadType("UserTokenResult")
+		ak.GinSend(UserTokenResult{
+			User:  foundUser.Source,
+			Token: tkn,
+		})
 		return
 	}
 
-	ak.GinErrorAbort(400, "AuthFailure", "Bad password.")
+	ak.GinErrorAbort(401, "AuthFailure", "Invalid credentials.")
 }
 
-// CheckEncryptPassword checks and encrypts the password inthe user
+// CheckEncryptPassword checks and encrypts the password in the user
 // object.
 func (u *User) CheckEncryptPassword(api *Api) error {
 
 	// if empty or redacted check to see if we have an
 	// existing user record
-	if u.Password == "" || u.Password == "REDACTED" {
+	if u.Password == "" || u.Password == RedactMsg {
 		code, existingUser, err := api.GetUser(u.Id)
 		if err != nil {
 			return err
@@ -235,13 +253,13 @@ func (u *User) CheckEncryptPassword(api *Api) error {
 		}
 
 		if code >= 500 {
-			return errors.New("Bad response from Es while looking up user.")
+			return errors.New("bad response from Es while looking up user")
 		}
 	}
 
 	// check the password
 	if len(u.Password) < 10 {
-		return errors.New("Password must be over ten characters.")
+		return errors.New("password must be over ten characters")
 	}
 
 	// encrypt the password

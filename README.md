@@ -4,7 +4,7 @@
 
 ## Configuration
 
-Configuration is inherited from [txn2/ack](https://github.com/txn2/ack#configuration). The
+Configuration is inherited from [txn2/micro](https://github.com/txn2/micro#configuration). The
 following configuration is specific to **provision**:
 
 | Flag          | Environment Variable | Description                                                |
@@ -26,10 +26,16 @@ go run ./cmd/provisison.go --esServer="http://localhost:9200"
 
 ## Examples
 
+### Util
+
+Get prefix:
+```bash
+curl http://localhost:8080/prefix
+```
+
 ### Account
 
-#### Upsert Account
-
+Upsert account:
 ```bash
 curl -X POST \
   http://localhost:8080/account \
@@ -47,16 +53,14 @@ curl -X POST \
 }'
 ```
 
-#### Get Account
-
+Get account:
 ```bash
 curl http://localhost:8080/account/xorg
 ```
 
 ### User
 
-#### Upsert User
-
+Upsert user:
 ```bash
 curl -X POST \
   http://localhost:8080/user \
@@ -66,7 +70,7 @@ curl -X POST \
 	"display_name": "System Operator",
 	"active": true,
 	"sysop": true,
-	"password": "JntGihgkGRvFKmb74XgUwn7bcYpb3bPtWE8gEVTpvChEqpsFwq",
+	"password": "examplepassword",
 	"sections_all": false,
 	"sections": [],
 	"accounts": [],
@@ -74,8 +78,37 @@ curl -X POST \
 }'
 ```
 
-#### Get User
-
+Get user:
 ```bash
 curl http://localhost:8080/user/sysop
+```
+
+Authenticate user:
+```bash
+curl -X POST \
+  http://localhost:8080/authUser \
+  -d '{
+	"id": "sysop",
+	"password": "examplepassword"
+}'
+```
+
+Access check:
+```bash
+# first get a token
+TOKEN=$(curl -s -X POST \
+          http://localhost:8080/authUser?raw=true \
+          -d '{
+        	"id": "sysop",
+        	"password": "examplepassword"
+        }') && echo $TOKEN
+        
+# check for basic access
+curl -X POST \
+  http://localhost:8080/userHasAccess \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+	"sections": ["a","b"],
+	"accounts": ["example","example2"]
+}'
 ```

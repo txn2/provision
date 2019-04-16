@@ -16,9 +16,7 @@ import (
 	"flag"
 	"os"
 
-	"github.com/gin-gonic/gin"
-
-	"github.com/txn2/ack"
+	"github.com/txn2/micro"
 	"github.com/txn2/provision"
 )
 
@@ -32,7 +30,8 @@ func main() {
 	esServer := flag.String("esServer", elasticServerEnv, "Elasticsearch Server")
 	systemPrefix := flag.String("systemPrefix", systemPrefixEnv, "Prefix for system indices.")
 
-	server := ack.NewServer()
+	serverCfg, _ := micro.NewServerCfg("Provision")
+	server := micro.NewServer(serverCfg)
 
 	// Provision API
 	provApi, err := provision.NewApi(&provision.Config{
@@ -40,6 +39,7 @@ func main() {
 		HttpClient:    server.Client,
 		ElasticServer: *esServer,
 		IdxPrefix:     *systemPrefix,
+		Token:         server.Token,
 	})
 	if err != nil {
 		server.Logger.Fatal("failure to instantiate the provisioning API: " + err.Error())
@@ -47,11 +47,7 @@ func main() {
 	}
 
 	// system prefix
-	server.Router.GET("/prefix", func(c *gin.Context) {
-		ak := ack.Gin(c)
-		ak.SetPayloadType("Prefix")
-		ak.GinSend(provApi.Config.IdxPrefix)
-	})
+	server.Router.GET("/prefix", provApi.PrefixHandler)
 
 	// Upsert an account
 	server.Router.POST("/account", provApi.UpsertAccountHandler)
@@ -64,6 +60,12 @@ func main() {
 
 	// Get a user
 	server.Router.GET("/user/:id", provApi.GetUserHandler)
+
+	// User has basic access (checks token and access request object)
+	server.Router.POST("/userHasAccess", provApi.UserTokenHandler(), provApi.UserHasAccessHandler)
+
+	// User has admin access (checks token and access request object)
+	server.Router.POST("/userHasAdminAccess", provApi.UserTokenHandler(), provApi.UserHasAdminAccessHandler)
 
 	// Auth a user
 	server.Router.POST("/authUser", provApi.AuthUserHandler)

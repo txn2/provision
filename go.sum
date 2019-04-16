@@ -4,6 +4,8 @@ github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 h1:xJ4a3vCFaGF/jqvzLM
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/dgrijalva/jwt-go v3.2.0+incompatible h1:7qlOGliEKZXTDg6OTjfoBKDXWrumCAMpl/TFQ4/5kLM=
+github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7 h1:AzN37oI0cOS+cougNAV9szl6CVoj2RYwzS3DpUQNtlY=
 github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7/go.mod h1:VJ0WA2NBN22VlZ2dKZQPAPnyWw5XTlK1KymzLKsr59s=
 github.com/gin-contrib/sse v0.0.0-20190301062529-5545eab6dad3 h1:t8FVkw33L+wilf2QiWkw0UV77qRpcH/JHPKGpKa2E8g=
@@ -39,6 +41,8 @@ github.com/mattn/go-isatty v0.0.7 h1:UvyT9uN+3r7yLEYSlJsbQGdsaB/a0DlgWP3pql6iwOc
 github.com/mattn/go-isatty v0.0.7/go.mod h1:Iq45c/XA43vh69/j3iqttzPXn0bhXyGjM0Hdxcsrc5s=
 github.com/matttproud/golang_protobuf_extensions v1.0.1 h1:4hp9jkHxhMHkqkrB3Ix0jegS5sx/RkqARlsWZ6pIwiU=
 github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5Ld7szi9bcBfOoFv/3dc6xSMkL2PC0=
+github.com/mitchellh/mapstructure v1.1.2 h1:fmNYVwqnSfB9mZU6OS2O6GsXM+wcskZDuKQzvN1EDeE=
+github.com/mitchellh/mapstructure v1.1.2/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh9fWfEaFds41c1Y=
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
 github.com/modern-go/reflect2 v1.0.1/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3RllmbCylyMrvgv0=
 github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223/go.mod h1:qRWi+5nqEBWmkhHvq77mSJWrCKwh8bxhgT7d/eI7P4U=
@@ -75,6 +79,18 @@ github.com/txn2/es v0.0.0-20190412233832-5c8bbb63389d h1:LSVf5PCPgz5hdRxe9N7Dbn2
 github.com/txn2/es v0.0.0-20190412233832-5c8bbb63389d/go.mod h1:nJol5eCfyqgoT31Xs+JKsmmrLcDTiTUyhDnnFqIiIjE=
 github.com/txn2/es v1.3.3 h1:xtv2RSaGTr6yF2dhfCj72J3IULYfFRqtk9P9bGXanuA=
 github.com/txn2/es v1.3.3/go.mod h1:EpfYehD9ztuADfvJo9Eoiv43yampBl/F5MaNNb6C7WU=
+github.com/txn2/micro v0.0.1 h1:7EFYaE3ePkzkf+6BCzQOZ+4Z1sWqeoixvrJeIZuN/cE=
+github.com/txn2/micro v0.0.1/go.mod h1:sklStegyx9D21NRVWF8eprONbJGnXoPTsxuKtTvzFLo=
+github.com/txn2/micro v0.0.2 h1:+BxuA7yDaYwwlATbJ6+KaWJtTqq3VeZBRabPyEOBUrE=
+github.com/txn2/micro v0.0.2/go.mod h1:r/uIbdFhvfjqKcT8mQUIKmzuh2Rxcablu7KB8oRRBoo=
+github.com/txn2/micro v0.0.3 h1:/+MqdFXuIocBj/+pKS5Md/aDjFeLXt1aB3hZA06M+W8=
+github.com/txn2/micro v0.0.3/go.mod h1:r/uIbdFhvfjqKcT8mQUIKmzuh2Rxcablu7KB8oRRBoo=
+github.com/txn2/micro v0.0.4 h1:EpdW/6EsTXY0ZePAs09aM95HjZMRKDc6DgPw4kHmxsk=
+github.com/txn2/micro v0.0.4/go.mod h1:r/uIbdFhvfjqKcT8mQUIKmzuh2Rxcablu7KB8oRRBoo=
+github.com/txn2/micro v0.0.5 h1:w6TcgFnYfbBW2r+FUM7MIUTN4q7+y/GvGqewquTt9tk=
+github.com/txn2/micro v0.0.5/go.mod h1:r/uIbdFhvfjqKcT8mQUIKmzuh2Rxcablu7KB8oRRBoo=
+github.com/txn2/token v0.0.1 h1:4nAK3duT59mXuZgvAi4Dmt6WNaOa17s+e6KiOBmIgHE=
+github.com/txn2/token v0.0.1/go.mod h1:rwlndPTGA4xxAuDI/cG2Tv43PJqDWFbFv7Vqm7nQbtc=
 github.com/ugorji/go/codec v0.0.0-20181209151446-772ced7fd4c2 h1:EICbibRW4JNKMcY+LsWmuwob+CRS1BmdRdjphAm9mH4=
 github.com/ugorji/go/codec v0.0.0-20181209151446-772ced7fd4c2/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=
 go.uber.org/atomic v1.3.2 h1:2Oa65PReHzfn29GpvgsYwloV9AVFHPDk8tYxt2c2tr4=

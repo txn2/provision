@@ -1,5 +1,123 @@
 package provision
 
+import (
+	"time"
+
+	"go.uber.org/zap"
+
+	"github.com/gin-gonic/gin"
+	"github.com/mitchellh/mapstructure"
+	"github.com/txn2/ack"
+	"github.com/txn2/token"
+)
+
+// AccessCheck is used to configure an access check
+type AccessCheck struct {
+	Sections []string `json:"sections"`
+	Accounts []string `json:"accounts"`
+}
+
+// UserTokenHandler
+func (a *Api) UserTokenHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ak := ack.Gin(c)
+
+		tokI, ok := c.Get("Tok")
+		if !ok {
+			ak.SetPayloadType("ErrorMessage")
+			ak.SetPayload("missing token")
+			ak.GinErrorAbort(401, "E401", "UnauthorizedAccess")
+			return
+		}
+
+		tok := tokI.(*token.Tok)
+
+		if !tok.Valid {
+			ak.SetPayloadType("ErrorMessage")
+			ak.SetPayload("invalid token")
+			ak.GinErrorAbort(401, "E401", "UnauthorizedAccess")
+			return
+		}
+
+		// check for expiration
+		time.Local = time.UTC
+		exp := int64(tok.Claims["exp"].(float64))
+		if time.Now().Unix() > exp {
+			ak.SetPayloadType("ErrorMessage")
+			ak.SetPayload("expired token")
+			ak.GinErrorAbort(401, "E401", "UnauthorizedAccess")
+			return
+		}
+
+		user := &User{}
+		err := mapstructure.Decode(tok.Claims["data"].(map[string]interface{}), user)
+		if err != nil {
+			ak.SetPayloadType("ErrorMessage")
+			ak.SetPayload("there was a problem decoding the token")
+			ak.GinErrorAbort(401, "E401", "UnauthorizedAccess")
+			return
+		}
+
+		if !user.HasBasicAccess() {
+			ak.SetPayloadType("ErrorMessage")
+			ak.SetPayload("user does not have basic access")
+			ak.GinErrorAbort(401, "E401", "UnauthorizedAccess")
+			return
+		}
+
+		// set a user middleware
+		c.Set("User", user)
+	}
+}
+
+// UserHasAdminAccessHandler
+func (a *Api) UserHasAdminAccessHandler(c *gin.Context) {
+	c.Set("AdminCheck", true)
+	a.UserHasAccessHandler(c)
+}
+
+// UserHasAccessHandler
+func (a *Api) UserHasAccessHandler(c *gin.Context) {
+	ak := ack.Gin(c)
+
+	userI, ok := c.Get("User")
+	if !ok {
+		ak.SetPayloadType("ErrorMessage")
+		ak.SetPayload("missing user")
+		ak.GinErrorAbort(401, "E401", "UnauthorizedAccess")
+		return
+	}
+
+	user := userI.(*User)
+
+	ac := &AccessCheck{}
+	err := ak.UnmarshalPostAbort(user)
+	if err != nil {
+		a.Logger.Error("AccessCheck failure.", zap.Error(err))
+		ak.SetPayloadType("ErrorMessage")
+		ak.SetPayload("user does not have access")
+		ak.GinErrorAbort(401, "E401", "UnauthorizedAccess")
+		return
+	}
+
+	_, checkAdmin := c.Get("AdminCheck")
+
+	if (!checkAdmin && user.HasAccess(ac)) || (checkAdmin && user.HasAdminAccess(ac)) {
+		ak.SetPayloadType("HasAccessResult")
+		ak.GinSend(true)
+		return
+	}
+
+	ak.SetPayloadType("ErrorMessage")
+	ak.SetPayload("user does not have basic access")
+
+	if checkAdmin {
+		ak.SetPayload("user does not have admin access")
+	}
+
+	ak.GinErrorAbort(401, "E401", "UnauthorizedAccess")
+}
+
 // BasicAccess returns true is user is active and not locked
 func (u *User) HasBasicAccess() bool {
 	return u.Active

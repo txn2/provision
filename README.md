@@ -111,4 +111,13 @@ curl -X POST \
 	"sections": ["a","b"],
 	"accounts": ["example","example2"]
 }'
+
+# check for admin access
+curl -X POST \
+  http://localhost:8080/userHasAdminAccess \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+	"sections": ["a","b"],
+	"accounts": ["example","example2"]
+}'
 ```

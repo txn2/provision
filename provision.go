@@ -19,14 +19,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/txn2/token"
-
 	"github.com/gin-gonic/gin"
 	"github.com/txn2/ack"
-
-	"github.com/txn2/micro"
-
 	"github.com/txn2/es"
+	"github.com/txn2/micro"
+	"github.com/txn2/token"
 	"go.uber.org/zap"
 )
 

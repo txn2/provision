@@ -108,9 +108,7 @@ dockers:
   image_templates:
     - "txn2/provision:latest"
     - "txn2/provision:{{ .Tag }}"
-    - "txn2/provision:v{{ .Major }}"
     - "txn2/provision:amd64-{{ .Tag }}"
-    - "txn2/provision:amd64-v{{ .Major }}"
   build_flag_templates:
     - "--label=org.label-schema.schema-version=1.0"
     - "--label=org.label-schema.version={{.Version}}"
@@ -125,8 +123,6 @@ dockers:
   image_templates:
     - "txn2/provision:armv6-latest"
     - "txn2/provision:armv6-{{ .Tag }}"
-    - "txn2/provision:armv6-{{ .Tag }}-arm6"
-    - "txn2/provision:armv6-v{{ .Major }}"
   build_flag_templates:
     - "--label=org.label-schema.schema-version=1.0"
     - "--label=org.label-schema.version={{.Version}}"
@@ -141,9 +137,7 @@ dockers:
   image_templates:
     - "txn2/provision:latest-alpine"
     - "txn2/provision:{{ .Tag }}-alpine"
-    - "txn2/provision:v{{ .Major }}-alpine"
     - "txn2/provision:amd64-{{ .Tag }}-alpine"
-    - "txn2/provision:amd64-v{{ .Major }}-alpine"
   build_flag_templates:
     - "--label=org.label-schema.schema-version=1.0"
     - "--label=org.label-schema.version={{.Version}}"
@@ -158,7 +152,6 @@ dockers:
   image_templates:
     - "txn2/provision:armv6-latest-alpine"
     - "txn2/provision:armv6-{{ .Tag }}-alpine"
-    - "txn2/provision:armv6-{{ .Tag }}-arm6-alpine"
     - "txn2/provision:armv6-v{{ .Major }}-alpine"
   build_flag_templates:
     - "--label=org.label-schema.schema-version=1.0"

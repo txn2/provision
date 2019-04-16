@@ -58,6 +58,17 @@ Get account:
 curl http://localhost:8080/account/xorg
 ```
 
+Search accounts:
+```bash
+curl -X POST \
+  http://localhost:8080/searchAccounts \
+  -d '{
+  "query": {
+    "match_all": {}
+  }
+}'
+```
+
 ### User
 
 Upsert user:
@@ -81,6 +92,17 @@ curl -X POST \
 Get user:
 ```bash
 curl http://localhost:8080/user/sysop
+```
+
+Search users:
+```bash
+curl -X POST \
+  http://localhost:8080/searchUsers \
+  -d '{
+  "query": {
+    "match_all": {}
+  }
+}'
 ```
 
 Authenticate user:

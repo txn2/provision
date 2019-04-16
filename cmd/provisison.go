@@ -55,11 +55,17 @@ func main() {
 	// Get an account
 	server.Router.GET("/account/:id", provApi.GetAccountHandler)
 
+	// Search accounts
+	server.Router.POST("/searchAccounts", provApi.SearchAccountsHandler)
+
 	// Upsert a user
 	server.Router.POST("/user", provApi.UpsertUserHandler)
 
 	// Get a user
 	server.Router.GET("/user/:id", provApi.GetUserHandler)
+
+	// Search users
+	server.Router.POST("/searchUsers", provApi.SearchUsersHandler)
 
 	// User has basic access (checks token and access request object)
 	server.Router.POST("/userHasAccess", provApi.UserTokenHandler(), provApi.UserHasAccessHandler)

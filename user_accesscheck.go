@@ -23,7 +23,7 @@ type AccessCheckResult struct {
 }
 
 // UserTokenHandler
-func (a *Api) UserTokenHandler() gin.HandlerFunc {
+func UserTokenHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ak := ack.Gin(c)
 

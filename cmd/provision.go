@@ -68,10 +68,10 @@ func main() {
 	server.Router.POST("/searchUsers", provApi.SearchUsersHandler)
 
 	// User has basic access (checks token and access request object)
-	server.Router.POST("/userHasAccess", provApi.UserTokenHandler(), provision.UserHasAccessHandler)
+	server.Router.POST("/userHasAccess", provision.UserTokenHandler(), provision.UserHasAccessHandler)
 
 	// User has admin access (checks token and access request object)
-	server.Router.POST("/userHasAdminAccess", provApi.UserTokenHandler(), provision.UserHasAdminAccessHandler)
+	server.Router.POST("/userHasAdminAccess", provision.UserTokenHandler(), provision.UserHasAdminAccessHandler)
 
 	// Auth a user
 	server.Router.POST("/authUser", provApi.AuthUserHandler)

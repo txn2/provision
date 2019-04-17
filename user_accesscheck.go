@@ -78,13 +78,13 @@ func (a *Api) UserTokenHandler() gin.HandlerFunc {
 }
 
 // UserHasAdminAccessHandler
-func (a *Api) UserHasAdminAccessHandler(c *gin.Context) {
+func UserHasAdminAccessHandler(c *gin.Context) {
 	c.Set("AdminCheck", true)
-	a.UserHasAccessHandler(c)
+	UserHasAccessHandler(c)
 }
 
 // UserHasAccessHandler
-func (a *Api) UserHasAccessHandler(c *gin.Context) {
+func UserHasAccessHandler(c *gin.Context) {
 	ak := ack.Gin(c)
 	ak.SetPayloadType("AccessCheckResult")
 	acr := AccessCheckResult{

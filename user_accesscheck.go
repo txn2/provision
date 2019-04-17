@@ -3,8 +3,6 @@ package provision
 import (
 	"time"
 
-	"go.uber.org/zap"
-
 	"github.com/gin-gonic/gin"
 	"github.com/mitchellh/mapstructure"
 	"github.com/txn2/ack"
@@ -106,7 +104,6 @@ func UserHasAccessHandler(c *gin.Context) {
 	ac := &AccessCheck{}
 	err := ak.UnmarshalPostAbort(ac)
 	if err != nil {
-		a.Logger.Error("AccessCheck failure.", zap.Error(err))
 		acr.Message = "Failed to parse access check object."
 		ak.SetPayloadType("AccessCheckResult")
 		ak.SetPayload(acr)

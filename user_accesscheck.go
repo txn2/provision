@@ -17,6 +17,13 @@ type AccessCheck struct {
 	Accounts []string `json:"accounts"`
 }
 
+// AccessCheckResult
+type AccessCheckResult struct {
+	AccessChecked *AccessCheck `json:"access_checked"`
+	Status        bool         `json:"status"`
+	Message       string       `json:"message"`
+}
+
 // UserTokenHandler
 func (a *Api) UserTokenHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -79,11 +86,17 @@ func (a *Api) UserHasAdminAccessHandler(c *gin.Context) {
 // UserHasAccessHandler
 func (a *Api) UserHasAccessHandler(c *gin.Context) {
 	ak := ack.Gin(c)
+	ak.SetPayloadType("AccessCheckResult")
+	acr := AccessCheckResult{
+		Status:  false,
+		Message: "Filed to check status",
+	}
 
 	userI, ok := c.Get("User")
 	if !ok {
-		ak.SetPayloadType("ErrorMessage")
-		ak.SetPayload("missing user")
+		ak.SetPayloadType("AccessCheckResult")
+		acr.Message = "No user object in token."
+		ak.SetPayload(acr)
 		ak.GinErrorAbort(401, "E401", "UnauthorizedAccess")
 		return
 	}
@@ -91,30 +104,36 @@ func (a *Api) UserHasAccessHandler(c *gin.Context) {
 	user := userI.(*User)
 
 	ac := &AccessCheck{}
-	err := ak.UnmarshalPostAbort(user)
+	err := ak.UnmarshalPostAbort(ac)
 	if err != nil {
 		a.Logger.Error("AccessCheck failure.", zap.Error(err))
-		ak.SetPayloadType("ErrorMessage")
-		ak.SetPayload("user does not have access")
+		acr.Message = "Failed to parse access check object."
+		ak.SetPayloadType("AccessCheckResult")
+		ak.SetPayload(acr)
 		ak.GinErrorAbort(401, "E401", "UnauthorizedAccess")
 		return
 	}
 
+	acr.AccessChecked = ac
+
 	_, checkAdmin := c.Get("AdminCheck")
 
 	if (!checkAdmin && user.HasAccess(ac)) || (checkAdmin && user.HasAdminAccess(ac)) {
-		ak.SetPayloadType("HasAccessResult")
-		ak.GinSend(true)
+		acr.Status = true
+		acr.Message = "Has access."
+		ak.SetPayloadType("AccessCheckResult")
+		ak.GinSend(acr)
 		return
 	}
 
-	ak.SetPayloadType("ErrorMessage")
-	ak.SetPayload("user does not have basic access")
+	acr.Status = false
+	acr.Message = "User does not have basic access."
 
 	if checkAdmin {
-		ak.SetPayload("user does not have admin access")
+		acr.Message = "User does not have admin access."
 	}
 
+	ak.SetPayload(acr)
 	ak.GinErrorAbort(401, "E401", "UnauthorizedAccess")
 }
 

@@ -22,6 +22,43 @@ type AccessCheckResult struct {
 	Message       string       `json:"message"`
 }
 
+// AccountAccessCheckHandler
+func AccountAccessCheckHandler(checkAdmin bool) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var ak ack.GinAck
+
+		userI, ok := c.Get("User")
+		if !ok {
+			ak = ack.Gin(c)
+			ak.SetPayload("Unable to get user from token.")
+			ak.GinErrorAbort(401, "E401", "UnauthorizedAccess")
+			return
+		}
+
+		user := userI.(*User)
+
+		account := c.Param("account")
+		if account == "" {
+			ak = ack.Gin(c)
+			ak.SetPayload("No account specified.")
+			ak.GinErrorAbort(401, "E401", "UnauthorizedAccess")
+			return
+		}
+
+		ac := &AccessCheck{
+			Accounts: []string{account},
+		}
+
+		if (!checkAdmin && user.HasAccess(ac)) || (checkAdmin && user.HasAdminAccess(ac)) {
+			return
+		}
+
+		ak = ack.Gin(c)
+		ak.SetPayload("User does not have required access.")
+		ak.GinErrorAbort(401, "E401", "UnauthorizedAccess")
+	}
+}
+
 // UserTokenHandler
 func UserTokenHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {

@@ -3,7 +3,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/txn2/provision)](https://goreportcard.com/report/github.com/txn2/provision)
 [![GoDoc](https://godoc.org/github.com/txn2/query?status.svg)](https://godoc.org/github.com/txn2/provision)
 [![Docker Container Image Size](https://shields.beevelop.com/docker/image/image-size/txn2/provision/latest.svg)](https://hub.docker.com/r/txn2/provision/)
-[![Docker Container Layers](https://shields.beevelop.com/docker/image/layers/txn2/provision/latest.svg)](https://hub.docker.com/r/txn2/query/)
+[![Docker Container Layers](https://shields.beevelop.com/docker/image/layers/txn2/provision/latest.svg)](https://hub.docker.com/r/txn2/provision/)
 
 **Provision** is a user and account micro-platform, a highly opinionated building block for TXN2 components. **Provision** defines basic object models that represent the foundation for an account and user. **Provision** is intended as a fundamental dependency of current and future TXN2 platform services.
 

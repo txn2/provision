@@ -112,8 +112,65 @@ func (a *Api) UpsertAccount(account *Account) (int, es.Result, error) {
 	return a.Elastic.PutObj(fmt.Sprintf("%s/_doc/%s", a.IdxPrefix+IdxAccount, account.Id), account)
 }
 
-// GetAccount
-func (a *Api) GetAccount(id string) (int, *AccountResult, error) {
+// CheckKeyHandler
+func (a *Api) CheckKeyHandler(c *gin.Context) {
+	ak := ack.Gin(c)
+
+	accountId := c.Param("id")
+	accessKey := &AccessKey{}
+	err := ak.UnmarshalPostAbort(accessKey)
+	if err != nil {
+		a.Logger.Error("Key failure.", zap.Error(err))
+		return
+	}
+
+	ok, err := a.CheckKey(accountId, *accessKey)
+	if err != nil {
+		ak.SetPayload("Access key check failure.")
+		ak.GinErrorAbort(404, "CheckKeyFailed", err.Error())
+		return
+	}
+
+	ak.SetPayloadType("CheckKeyResult")
+
+	if ok {
+		ak.GinSend(true)
+		return
+	}
+
+	ak.SetPayload(false)
+	ak.GinErrorAbort(401, "CheckKeyFailed", "Key is not valid for account.")
+}
+
+// CheckKey returns true if the provided key is valid for the account
+func (a *Api) CheckKey(accountId string, key AccessKey) (bool, error) {
+	// Get the requested account
+	code, accountResult, err := a.getAccountRaw(accountId)
+	if err != nil {
+		return false, err
+	}
+
+	if code != 200 {
+		return false, errors.New("Got status code " + string(code) + " back from GetAccount.")
+	}
+
+	for _, accessKey := range accountResult.Source.AccessKeys {
+		// if we find an active key with the same name
+		if accessKey.Name == key.Name && accessKey.Active == true {
+			// check key (password)
+			err = bcrypt.CompareHashAndPassword([]byte(accessKey.Key), []byte(key.Key))
+			if err != nil {
+				return false, nil
+			}
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// getAccountRaw returns raw account (un-redacted)
+func (a *Api) getAccountRaw(id string) (int, *AccountResult, error) {
 
 	accountResult := &AccountResult{}
 
@@ -127,6 +184,18 @@ func (a *Api) GetAccount(id string) (int, *AccountResult, error) {
 		return code, accountResult, err
 	}
 
+	return code, accountResult, nil
+}
+
+// GetAccount
+func (a *Api) GetAccount(id string) (int, *AccountResult, error) {
+
+	code, accountResult, err := a.getAccountRaw(id)
+	if err != nil || code != 200 {
+		return code, nil, err
+	}
+
+	// Redact keys
 	for i := range accountResult.Source.AccessKeys {
 		accountResult.Source.AccessKeys[i].Key = RedactMsg
 	}

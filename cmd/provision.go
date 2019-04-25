@@ -55,6 +55,9 @@ func main() {
 	// Get an account
 	server.Router.GET("/account/:id", provApi.GetAccountHandler)
 
+	// Check an account for an active key
+	server.Router.POST("/keyCheck/:id", provApi.CheckKeyHandler)
+
 	// Search accounts
 	server.Router.POST("/searchAccounts", provApi.SearchAccountsHandler)
 

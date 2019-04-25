@@ -51,6 +51,13 @@ func (a *Api) SearchAccounts(searchObj *es.Obj) (int, AccountSearchResults, erro
 		return code, *asResults, err
 	}
 
+	// Redact Keys
+	for i := range asResults.Hits.Hits {
+		for ii := range asResults.Hits.Hits[i].Source.AccessKeys {
+			asResults.Hits.Hits[i].Source.AccessKeys[ii].Key = RedactMsg
+		}
+	}
+
 	return code, *asResults, nil
 }
 

@@ -17,12 +17,14 @@ package provision
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/txn2/ack"
 	"github.com/txn2/es"
 	"go.uber.org/zap"
+	"golang.org/x/crypto/bcrypt"
 )
 
 const IdxAccount = "account"
@@ -94,6 +96,13 @@ func (a *Api) UpsertAccount(account *Account) (int, es.Result, error) {
 		account.OrgId = accountRes.Source.OrgId
 	}
 
+	// attempt to encrypt the keys if one or more we provided
+	// otherwise populate with existing
+	err := account.CheckEncryptKeys(a)
+	if err != nil {
+		return 500, es.Result{}, err
+	}
+
 	return a.Elastic.PutObj(fmt.Sprintf("%s/_doc/%s", a.IdxPrefix+IdxAccount, account.Id), account)
 }
 
@@ -110,6 +119,10 @@ func (a *Api) GetAccount(id string) (int, *AccountResult, error) {
 	err = json.Unmarshal(ret, accountResult)
 	if err != nil {
 		return code, accountResult, err
+	}
+
+	for i := range accountResult.Source.AccessKeys {
+		accountResult.Source.AccessKeys[i].Key = RedactMsg
 	}
 
 	return code, accountResult, nil
@@ -137,4 +150,66 @@ func (a *Api) GetAccountHandler(c *gin.Context) {
 
 	ak.SetPayloadType("AccountResult")
 	ak.GinSend(accountResult)
+}
+
+// CheckEncryptKeys checks and encrypts keys in the account
+// object.
+func (acnt *Account) CheckEncryptKeys(api *Api) error {
+
+	// does the account exist?
+	code, existingAccount, err := api.GetAccount(acnt.Id)
+	if err != nil {
+		return err
+	}
+
+	// account exists
+	if code == 200 {
+		// assign existing encrypted keys if current data is
+		// empty or redacted message
+		for i, accessKey := range acnt.AccessKeys {
+			// empty or redacted keys mean use existing
+			if accessKey.Key == "" || accessKey.Key == RedactMsg {
+				acnt.AccessKeys[i].Key = existingAccount.Source.AccessKeys[i].Key
+				continue
+			}
+
+			// check the key length
+			if len(accessKey.Key) < 10 {
+				return errors.New("key must be over ten characters")
+			}
+
+			// encrypt the key
+			encKey, err := bcrypt.GenerateFromPassword([]byte(accessKey.Key), EncCost)
+			if err != nil {
+				return err
+			}
+
+			// set the hashed password
+			acnt.AccessKeys[i].Key = string(encKey)
+		}
+
+		return nil
+	}
+
+	if code >= 500 {
+		return errors.New("bad response from Es while looking up account")
+	}
+
+	// if we got here this is a new account
+	// check for key lengths and encrypt the keys
+	for i, accessKey := range acnt.AccessKeys {
+		if len(accessKey.Key) < 10 {
+			return errors.New("key must be over ten characters")
+		}
+
+		encKey, err := bcrypt.GenerateFromPassword([]byte(accessKey.Key), EncCost)
+		if err != nil {
+			return err
+		}
+
+		// set the hashed password
+		acnt.AccessKeys[i].Key = string(encKey)
+	}
+
+	return nil
 }

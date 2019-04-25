@@ -54,6 +54,12 @@ type AccountResult struct {
 	Source Account `json:"_source"`
 }
 
+// AccountResultAck
+type AccountResultAck struct {
+	ack.Ack
+	Payload AccountResult `json:"payload"`
+}
+
 // UpsertAccountHandler
 func (a *Api) UpsertAccountHandler(c *gin.Context) {
 	ak := ack.Gin(c)

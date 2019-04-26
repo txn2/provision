@@ -51,10 +51,22 @@ type UserResult struct {
 	Source User `json:"_source"`
 }
 
+// UserTokenResultAck
+type UserResultAck struct {
+	ack.Ack
+	Payload UserResult `json:"payload"`
+}
+
 // UserTokenResult
 type UserTokenResult struct {
 	User  User   `json:"user"`
 	Token string `json:"token"`
+}
+
+// UserTokenResultAck
+type UserTokenResultAck struct {
+	ack.Ack
+	Payload UserTokenResult `json:"payload"`
 }
 
 // Auth for authenticating users

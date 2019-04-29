@@ -79,6 +79,15 @@ func main() {
 	// Auth a user
 	server.Router.POST("/authUser", provApi.AuthUserHandler)
 
+	// Upsert an asset
+	server.Router.POST("/asset", provApi.UpsertAssetHandler)
+
+	// Get an asset
+	server.Router.GET("/asset/:id", provApi.GetAssetHandler)
+
+	// Search assets
+	server.Router.POST("/searchAssets", provApi.SearchAssetsHandler)
+
 	// run provisioning server
 	server.Run()
 }

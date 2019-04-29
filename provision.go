@@ -79,6 +79,12 @@ func NewApi(cfg *Config) (*Api, error) {
 		return nil, err
 	}
 
+	// send index mappings for asset
+	err = a.SendEsMapping(GetAssetMapping(cfg.IdxPrefix))
+	if err != nil {
+		return nil, err
+	}
+
 	return a, nil
 }
 

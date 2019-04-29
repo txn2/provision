@@ -9,6 +9,22 @@ import (
 	"go.uber.org/zap"
 )
 
+// AssetSearchResults
+type AssetSearchResults struct {
+	es.SearchResults
+	Hits struct {
+		Total    int           `json:"total"`
+		MaxScore float64       `json:"max_score"`
+		Hits     []AssetResult `json:"hits"`
+	} `json:"hits"`
+}
+
+// AssetSearchResultsAck
+type AssetSearchResultsAck struct {
+	ack.Ack
+	Payload AssetSearchResults `json:"payload"`
+}
+
 // AccountSearchResults
 type AccountSearchResults struct {
 	es.SearchResults
@@ -39,6 +55,49 @@ type UserSearchResults struct {
 type UserSearchResultsAck struct {
 	ack.Ack
 	Payload UserSearchResults `json:"payload"`
+}
+
+// SearchAssets
+func (a *Api) SearchAssets(searchObj *es.Obj) (int, AssetSearchResults, error) {
+	asResults := &AssetSearchResults{}
+
+	code, err := a.Elastic.PostObjUnmarshal(fmt.Sprintf("%s/_search", a.IdxPrefix+IdxAsset), searchObj, asResults)
+	if err != nil {
+		a.Logger.Error("EsError", zap.Error(err))
+		return code, *asResults, err
+	}
+
+	return code, *asResults, nil
+}
+
+// SearchAssetsHandler
+func (a *Api) SearchAssetsHandler(c *gin.Context) {
+	ak := ack.Gin(c)
+
+	obj := &es.Obj{}
+	err := ak.UnmarshalPostAbort(obj)
+	if err != nil {
+		a.Logger.Error("Search failure.", zap.Error(err))
+		return
+	}
+
+	code, esResult, err := a.SearchAssets(obj)
+	if err != nil {
+		a.Logger.Error("EsError", zap.Error(err))
+		ak.SetPayloadType("EsError")
+		ak.SetPayload("Error communicating with database.")
+		ak.GinErrorAbort(500, "EsError", err.Error())
+		return
+	}
+
+	if code >= 400 && code < 500 {
+		ak.SetPayload(esResult)
+		ak.GinErrorAbort(500, "SearchError", "There was a problem searching")
+		return
+	}
+
+	ak.SetPayloadType("AssetSearchResults")
+	ak.GinSend(esResult)
 }
 
 // SearchAccounts

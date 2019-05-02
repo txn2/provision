@@ -7,9 +7,13 @@
 
 **Provision** is a user and account micro-platform, a highly opinionated building block for TXN2 components. **Provision** defines basic object models that represent the foundation for an account, user and asset. **Provision** is intended as a fundamental dependency of current and future TXN2 platform services.
 
-**Provision** uses Elasticsearch as a Database for **account**, **user** and **asset** objects.
+- Elasticsearch is used as a database for **account**, **user** and **asset** objects.
+- Intended for basic storage, retrieval and searching.
 
 ![Provision Objects](./objects.png)
+
+**Provision** is intended as in internal service to be accessed by other services. Use a secure
+reverse proxy for direct access by system operators.
 
 ## Configuration
 
@@ -23,22 +27,22 @@ following configuration is specific to **provision**:
 
 ## Routes
 
-| Method | Route Pattern          | Description                                                      |
-|:-------|:-----------------------|:-----------------------------------------------------------------|
-| GET    | [/prefix](#Get+Prefix) | Get the prefix used for Elasticsearch indexes.                   |
-| POST   | /account               | Upsert an Account object.                                        |
-| GET    | /account/:id           | Get an Account ojbect by id.                                     |
-| POST   | /keyCheck/:id          | Check if an AccessKey is associated with an account.             |
-| POST   | /searchAccounts        | Search for Accounts with a Lucene query.                         |
-| POST   | /user                  | Upsert a User object.                                            |
-| GET    | /user/:id              | Get a User object by id.                                         |
-| POST   | /searchUsers           | Search for Users with a Lucene query.                            |
-| POST   | /userHasAccess         | Post an AccessCheck object with Token to determine basic access. |
-| POST   | /userHasAdminAccess    | Post an AccessCheck object with Token to determine admin access. |
-| POST   | /authUser              | Post Credentials and if valid receive a Token.                   |
-| POST   | /asset                 | Upsert an Asset.                                                 |
-| GET    | /asset/:id             | Get an asset by id.                                              |
-| POST   | /searchAssets          | Search for Assets with a Lucene query.                           |
+| Method | Route Pattern                       | Description                                                      |
+|:-------|:------------------------------------|:-----------------------------------------------------------------|
+| GET    | [/prefix](#get-prefix)              | Get the prefix used for Elasticsearch indexes.                   |
+| POST   | [/account](#upsert-account)         | Upsert an Account object.                                        |
+| GET    | [/account/:id](#get-account)        | Get an Account ojbect by id.                                     |
+| POST   | /keyCheck/:id                       | Check if an AccessKey is associated with an account.             |
+| POST   | [/searchAccounts](#search-accounts) | Search for Accounts with a Lucene query.                         |
+| POST   | [/user](#upsert-user)               | Upsert a User object.                                            |
+| GET    | [/user/:id](#get-user)              | Get a User object by id.                                         |
+| POST   | [/searchUsers](#search-users)       | Search for Users with a Lucene query.                            |
+| POST   | /userHasAccess                      | Post an AccessCheck object with Token to determine basic access. |
+| POST   | /userHasAdminAccess                 | Post an AccessCheck object with Token to determine admin access. |
+| POST   | /authUser                           | Post Credentials and if valid receive a Token.                   |
+| POST   | /asset                              | Upsert an Asset.                                                 |
+| GET    | /asset/:id                          | Get an asset by id.                                              |
+| POST   | /searchAssets                       | Search for Assets with a Lucene query.                           |
 
 
 ## Development
@@ -64,7 +68,7 @@ curl http://localhost:8080/prefix
 
 ### Account
 
-Upsert account:
+#### Upsert Account
 ```bash
 curl -X POST \
   http://localhost:8080/account \
@@ -82,12 +86,12 @@ curl -X POST \
 }'
 ```
 
-Get account:
+#### Get Account
 ```bash
 curl http://localhost:8080/account/xorg
 ```
 
-Search accounts:
+#### Search Accounts
 ```bash
 curl -X POST \
   http://localhost:8080/searchAccounts \
@@ -100,7 +104,7 @@ curl -X POST \
 
 ### User
 
-Upsert user:
+#### Upsert User
 ```bash
 curl -X POST \
   http://localhost:8080/user \
@@ -118,12 +122,12 @@ curl -X POST \
 }'
 ```
 
-Get user:
+#### Get User
 ```bash
 curl http://localhost:8080/user/sysop
 ```
 
-Search users:
+#### Search Users
 ```bash
 curl -X POST \
   http://localhost:8080/searchUsers \
@@ -134,7 +138,7 @@ curl -X POST \
 }'
 ```
 
-Authenticate user:
+#### Authenticate User
 ```bash
 curl -X POST \
   http://localhost:8080/authUser \
@@ -144,7 +148,7 @@ curl -X POST \
 }'
 ```
 
-Access check:
+#### Access Check
 ```bash
 # first get a token
 TOKEN=$(curl -s -X POST \

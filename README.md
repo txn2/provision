@@ -5,7 +5,11 @@
 [![Docker Container Image Size](https://shields.beevelop.com/docker/image/image-size/txn2/provision/latest.svg)](https://hub.docker.com/r/txn2/provision/)
 [![Docker Container Layers](https://shields.beevelop.com/docker/image/layers/txn2/provision/latest.svg)](https://hub.docker.com/r/txn2/provision/)
 
-**Provision** is a user and account micro-platform, a highly opinionated building block for TXN2 components. **Provision** defines basic object models that represent the foundation for an account and user. **Provision** is intended as a fundamental dependency of current and future TXN2 platform services.
+**Provision** is a user and account micro-platform, a highly opinionated building block for TXN2 components. **Provision** defines basic object models that represent the foundation for an account, user and asset. **Provision** is intended as a fundamental dependency of current and future TXN2 platform services.
+
+**Provision** uses Elasticsearch as a Database for **account**, **user** and **asset** objects.
+
+![Provision Objects](./objects.png)
 
 ## Configuration
 
@@ -16,6 +20,26 @@ following configuration is specific to **provision**:
 |:--------------|:---------------------|:-----------------------------------------------------------|
 | -esServer     | ELASTIC_SERVER       | Elasticsearch Server (default "http://elasticsearch:9200") |
 | -systemPrefix | SYSTEM_PREFIX        | Prefix for system indices. (default "system_")             |
+
+## Routes
+
+| Method | Route Pattern          | Description                                                      |
+|:-------|:-----------------------|:-----------------------------------------------------------------|
+| GET    | [/prefix](#Get+Prefix) | Get the prefix used for Elasticsearch indexes.                   |
+| POST   | /account               | Upsert an Account object.                                        |
+| GET    | /account/:id           | Get an Account ojbect by id.                                     |
+| POST   | /keyCheck/:id          | Check if an AccessKey is associated with an account.             |
+| POST   | /searchAccounts        | Search for Accounts with a Lucene query.                         |
+| POST   | /user                  | Upsert a User object.                                            |
+| GET    | /user/:id              | Get a User object by id.                                         |
+| POST   | /searchUsers           | Search for Users with a Lucene query.                            |
+| POST   | /userHasAccess         | Post an AccessCheck object with Token to determine basic access. |
+| POST   | /userHasAdminAccess    | Post an AccessCheck object with Token to determine admin access. |
+| POST   | /authUser              | Post Credentials and if valid receive a Token.                   |
+| POST   | /asset                 | Upsert an Asset.                                                 |
+| GET    | /asset/:id             | Get an asset by id.                                              |
+| POST   | /searchAssets          | Search for Assets with a Lucene query.                           |
+
 
 ## Development
 
@@ -33,7 +57,7 @@ go run ./cmd/provisison.go --esServer="http://localhost:9200"
 
 ### Util
 
-Get prefix:
+#### Get Prefix
 ```bash
 curl http://localhost:8080/prefix
 ```

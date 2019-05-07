@@ -40,7 +40,7 @@ following configuration is specific to **provision**:
 | POST   | [/userHasAccess](#access-check)     | Post an AccessCheck object with Token to determine basic access. |
 | POST   | [/userHasAdminAccess](#access-check)| Post an AccessCheck object with Token to determine admin access. |
 | POST   | [/authUser](#auth-user)             | Post Credentials and if valid receive a Token.                   |
-| POST   | [/asset](#upsert-asset]             | Upsert an Asset.                                                 |
+| POST   | [/asset](#upsert-asset)             | Upsert an Asset.                                                 |
 | GET    | [/asset/:id](#get-asset)            | Get an asset by id.                                              |
 | POST   | [/searchAssets](#search-assets)     | Search for Assets with a Lucene query.                           |
 

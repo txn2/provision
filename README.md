@@ -32,7 +32,7 @@ following configuration is specific to **provision**:
 | GET    | [/prefix](#get-prefix)              | Get the prefix used for Elasticsearch indexes.                   |
 | POST   | [/account](#upsert-account)         | Upsert an Account object.                                        |
 | GET    | [/account/:id](#get-account)        | Get an Account ojbect by id.                                     |
-| POST   | /keyCheck/:id                       | Check if an AccessKey is associated with an account.             |
+| POST   | [/keyCheck/:id](#check-key)         | Check if an AccessKey is associated with an account.             |
 | POST   | [/searchAccounts](#search-accounts) | Search for Accounts with a Lucene query.                         |
 | POST   | [/user](#upsert-user)               | Upsert a User object.                                            |
 | GET    | [/user/:id](#get-user)              | Get a User object by id.                                         |
@@ -114,6 +114,17 @@ curl -X POST \
   "query": {
     "match_all": {}
   }
+}'
+```
+
+#### Check Key
+```bash
+curl -X POST \
+  http://localhost:8080/keyCheck/test_account \
+  -H 'Content-Type: application/json' \
+  -d '{ 
+	"name": "test_data", 
+	"key": "sRqhFPdudA9s8qtVqgixHXyU8ubbYhrCBttC8amLdMwkxeZHskseNXyCRe4eXRxP"
 }'
 ```
 

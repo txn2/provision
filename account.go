@@ -102,7 +102,7 @@ func (a *Api) UpsertAccount(account *Account) (int, es.Result, error) {
 		account.OrgId = accountRes.Source.OrgId
 	}
 
-	// attempt to encrypt the keys if one or more we provided
+	// attempt to encrypt the keys if one or more were provided
 	// otherwise populate with existing
 	err := account.CheckEncryptKeys(a)
 	if err != nil {
@@ -179,12 +179,18 @@ func (a *Api) getAccountRaw(id string) (int, *AccountResult, error) {
 		return code, accountResult, err
 	}
 
-	err = json.Unmarshal(ret, accountResult)
-	if err != nil {
-		return code, accountResult, err
+	//a.Logger.Info("About to unmarshal", zap.Int("code", code), zap.ByteString("data", ret))
+
+	if code == 200 {
+		err = json.Unmarshal(ret, accountResult)
+		if err != nil {
+			return code, accountResult, err
+		}
+
+		return code, accountResult, nil
 	}
 
-	return code, accountResult, nil
+	return code, nil, fmt.Errorf("database returned code %d:%s", code, ret)
 }
 
 // GetAccount
@@ -232,10 +238,7 @@ func (a *Api) GetAccountHandler(c *gin.Context) {
 func (acnt *Account) CheckEncryptKeys(api *Api) error {
 
 	// does the account exist?
-	code, existingAccount, err := api.GetAccount(acnt.Id)
-	if err != nil {
-		return err
-	}
+	code, existingAccount, _ := api.GetAccount(acnt.Id)
 
 	// account exists
 	if code == 200 {

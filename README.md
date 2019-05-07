@@ -37,12 +37,12 @@ following configuration is specific to **provision**:
 | POST   | [/user](#upsert-user)               | Upsert a User object.                                            |
 | GET    | [/user/:id](#get-user)              | Get a User object by id.                                         |
 | POST   | [/searchUsers](#search-users)       | Search for Users with a Lucene query.                            |
-| POST   | /userHasAccess                      | Post an AccessCheck object with Token to determine basic access. |
-| POST   | /userHasAdminAccess                 | Post an AccessCheck object with Token to determine admin access. |
-| POST   | /authUser                           | Post Credentials and if valid receive a Token.                   |
-| POST   | /asset                              | Upsert an Asset.                                                 |
-| GET    | /asset/:id                          | Get an asset by id.                                              |
-| POST   | /searchAssets                       | Search for Assets with a Lucene query.                           |
+| POST   | [/userHasAccess](#access-check)     | Post an AccessCheck object with Token to determine basic access. |
+| POST   | [/userHasAdminAccess](#access-check)| Post an AccessCheck object with Token to determine admin access. |
+| POST   | [/authUser](#auth-user)             | Post Credentials and if valid receive a Token.                   |
+| POST   | [/asset](#upsert-asset]             | Upsert an Asset.                                                 |
+| GET    | [/asset/:id](#get-asset)            | Get an asset by id.                                              |
+| POST   | [/searchAssets](#search-assets)     | Search for Assets with a Lucene query.                           |
 
 
 ## Development
@@ -72,11 +72,26 @@ curl http://localhost:8080/prefix
 ```bash
 curl -X POST \
   http://localhost:8080/account \
+  -H 'Content-Type: application/json' \
   -d '{
-	"id": "xorg",
-	"description": "Organization X is an IOT data collection agency.",
-	"display_name": "Organization X",
-	"active": true,
+    "id": "test_account",
+    "description": "This is a test account",
+    "display_name": "Test Organization",
+    "active": true,
+    "access_keys": [
+        {
+            "name": "test-data",
+            "key": "sRqhFPdudA9s8qtVqgixHXyU8ubbYhrCBttC8amLdMwkxeZHskseNXyCRe4eXRxP",
+            "description": "Generic access key",
+            "active": true
+        },
+        {
+            "name": "test",
+            "key": "PDWgYr3bQGNoLptBRDkLTGQcRmCMqLGRFpXoXJ8xMPsMLMg3LHvWpJgDu2v3LYBA",
+            "description": "Generic access key 2",
+            "active": true
+        }
+    ],
     "modules": [
         "telematics",
         "wx",
@@ -88,7 +103,7 @@ curl -X POST \
 
 #### Get Account
 ```bash
-curl http://localhost:8080/account/xorg
+curl http://localhost:8080/account/test_account
 ```
 
 #### Search Accounts
@@ -108,23 +123,24 @@ curl -X POST \
 ```bash
 curl -X POST \
   http://localhost:8080/user \
+  -H 'Content-Type: application/json' \
   -d '{
-	"id": "sysop",
-	"description": "Global system operator",
-	"display_name": "System Operator",
+	"id": "test_user",
+	"description": "Test User non-admin",
+	"display_name": "Test User",
 	"active": true,
-	"sysop": true,
-	"password": "examplepassword",
+	"sysop": false,
+	"password": "eWidL7UtiWJABHgn8WAv8MWbqNKjHUqhNC7ZaWotEFKYNrLvzAwwCXC9eskPFJoY",
 	"sections_all": false,
-	"sections": [],
-	"accounts": [],
+	"sections": ["api", "config", "data"],
+	"accounts": ["test"],
 	"admin_accounts": []
 }'
 ```
 
 #### Get User
 ```bash
-curl http://localhost:8080/user/sysop
+curl -X GET http://localhost:8080/user/test_user
 ```
 
 #### Search Users
@@ -142,9 +158,10 @@ curl -X POST \
 ```bash
 curl -X POST \
   http://localhost:8080/authUser \
+  -H 'Content-Type: application/json' \
   -d '{
-	"id": "sysop",
-	"password": "examplepassword"
+	"id": "test_user",
+	"password": "eWidL7UtiWJABHgn8WAv8MWbqNKjHUqhNC7ZaWotEFKYNrLvzAwwCXC9eskPFJoY"
 }'
 ```
 
@@ -154,8 +171,8 @@ curl -X POST \
 TOKEN=$(curl -s -X POST \
           http://localhost:8080/authUser?raw=true \
           -d '{
-        	"id": "sysop",
-        	"password": "examplepassword"
+        	"id": "test_user",
+        	"password": "eWidL7UtiWJABHgn8WAv8MWbqNKjHUqhNC7ZaWotEFKYNrLvzAwwCXC9eskPFJoY"
         }') && echo $TOKEN
         
 # check for basic access
@@ -163,8 +180,8 @@ curl -X POST \
   http://localhost:8080/userHasAccess \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
-	"sections": ["a","b"],
-	"accounts": ["example","example2"]
+	"sections": ["api"],
+	"accounts": ["test"]
 }'
 
 # check for admin access
@@ -172,10 +189,50 @@ curl -X POST \
   http://localhost:8080/userHasAdminAccess \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
-	"sections": ["a","b"],
-	"accounts": ["example","example2"]
+	"sections": ["api"],
+	"accounts": ["test"]
 }'
 ```
+
+### Asset
+
+#### Upsert Asset
+```bash
+curl -X POST \
+  http://localhost:8080/asset \
+  -H 'Content-Type: application/json' \
+  -d '{
+	"id": "test-unique-asset-id-12345",
+	"description": "A unique asset in the system.",
+	"display_name": "Asset 12345",
+	"active": true,
+	"asset_class": "iot_device",
+	"account_models": [
+		{ "account_id": "test", "model_id": "device_details" },
+		{ "account_id": "test", "model_id": "device_location" }
+	]
+}'
+```
+
+#### Get Asset
+```bash
+curl -X GET http://localhost:8080/asset/test-unique-asset-id-12345
+```
+
+#### Search Assets
+```bash
+curl -X POST \
+  http://localhost:8080/searchAssets \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "query": {
+    "match_all": {}
+  }
+}'
+```
+
+
+
 
 ## Release Packaging
 

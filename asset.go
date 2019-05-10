@@ -32,12 +32,14 @@ type AccountModel struct {
 // Asset defines an asset object
 type Asset struct {
 	Id            string         `json:"id"`
+	AccountId     string         `json:"account_id"`
 	Description   string         `json:"description"`
 	DisplayName   string         `json:"display_name"`
 	AssetClass    string         `json:"asset_class"`
 	AssetCfg      string         `json:"asset_cfg"`
 	Active        bool           `json:"active"`
 	AccountModels []AccountModel `json:"account_models"`
+	SystemModels  []string       `json:"system_models"`
 }
 
 // AssetResult returned from Elastic
@@ -149,7 +151,10 @@ func GetAssetMapping(prefix string) es.IndexTemplate {
 				},
 				"properties": es.Obj{
 					"id": es.Obj{
-						"type": "text",
+						"type": "keyword",
+					},
+					"account_id": es.Obj{
+						"type": "keyword",
 					},
 					"description": es.Obj{
 						"type": "text",
@@ -165,6 +170,9 @@ func GetAssetMapping(prefix string) es.IndexTemplate {
 					},
 					"asset_cfg": es.Obj{
 						"type": "text",
+					},
+					"system_models": es.Obj{
+						"type": "keyword",
 					},
 					"account_models": es.Obj{
 						"properties": es.Obj{

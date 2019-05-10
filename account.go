@@ -36,6 +36,7 @@ type AccessKey struct {
 // User defines an account object
 type Account struct {
 	Id          string      `json:"id"`
+	Parent      string      `json:"parent"`
 	Description string      `json:"description"`
 	DisplayName string      `json:"display_name"`
 	Active      bool        `json:"active"`
@@ -302,7 +303,10 @@ func GetAccountMapping(prefix string) es.IndexTemplate {
 				},
 				"properties": es.Obj{
 					"id": es.Obj{
-						"type": "text",
+						"type": "keyword",
+					},
+					"parent": es.Obj{
+						"type": "keyword",
 					},
 					"description": es.Obj{
 						"type": "text",
@@ -314,7 +318,10 @@ func GetAccountMapping(prefix string) es.IndexTemplate {
 						"type": "boolean",
 					},
 					"org_id": es.Obj{
-						"type": "integer",
+						"type": "keyword",
+					},
+					"modules": es.Obj{
+						"type": "keyword",
 					},
 					"access_keys": es.Obj{
 						"type": "nested",

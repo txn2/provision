@@ -317,6 +317,12 @@ func GetUserMapping(prefix string) es.IndexTemplate {
 					"sections_all": es.Obj{
 						"type": "boolean",
 					},
+					"accounts": es.Obj{
+						"type": "keyword",
+					},
+					"admin_accounts": es.Obj{
+						"type": "keyword",
+					},
 				},
 			},
 		},

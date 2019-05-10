@@ -7,7 +7,7 @@
 
 **Provision** is a user and account micro-platform, a highly opinionated building block for TXN2 components. **Provision** defines basic object models that represent the foundation for an account, user and asset. **Provision** is intended as a fundamental dependency of current and future TXN2 platform services.
 
-- Elasticsearch is used as a database for **account**, **user** and **asset** objects.
+- Elasticsearch is used as a database for **[Account]**, **[User]** and **[Asset]** objects.
 - Intended for basic storage, retrieval and searching.
 
 ![Provision Objects](./objects.png)
@@ -54,7 +54,7 @@ docker-compose up
 
 Run for source:
 ```bash
-go run ./cmd/provisison.go --esServer="http://localhost:9200"
+go run ./cmd/provision.go --esServer="http://localhost:9200"
 ```
 
 ## Examples
@@ -256,3 +256,7 @@ Build and release:
 ```bash
 GITHUB_TOKEN=$GITHUB_TOKEN goreleaser --rm-dist
 ```
+
+[Account]: https://godoc.org/github.com/txn2/provision#Account
+[User]: https://godoc.org/github.com/txn2/provision#User
+[Asset]: https://godoc.org/github.com/txn2/provision#Asset

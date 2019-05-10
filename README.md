@@ -10,7 +10,6 @@
 - Elasticsearch is used as a database for **[Account]**, **[User]** and **[Asset]** objects.
 - Intended for basic storage, retrieval and searching.
 
-![Provision Objects](./objects.png)
 
 **Provision** is intended as in internal service to be accessed by other services. Use a secure
 reverse proxy for direct access by system operators.

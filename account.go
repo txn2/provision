@@ -33,7 +33,7 @@ type AccessKey struct {
 	Active      bool   `json:"active"`
 }
 
-// User defines an account object
+// Account defines an account object
 type Account struct {
 	Id          string      `json:"id"`
 	Parent      string      `json:"parent"`

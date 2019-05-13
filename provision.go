@@ -66,7 +66,9 @@ func NewApi(cfg *Config) (*Api, error) {
 		cfg.IdxPrefix = "system_"
 	}
 
-	// check for elasticsearch three times
+	// check for elasticsearch a few times before failing
+	// this reduces a reliance on restarts when a full system is
+	// spinning up
 	backOff := []int{10, 10, 15, 15, 30, 30, 45}
 	for _, boff := range backOff {
 		code, _, _ := a.Elastic.Get("")

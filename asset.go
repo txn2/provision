@@ -39,7 +39,7 @@ type Asset struct {
 	AssetCfg      string         `json:"asset_cfg"`
 	Active        bool           `json:"active"`
 	AccountModels []AccountModel `json:"account_models"`
-	SystemModels  []string       `json:"system_models"`
+	SystemModels  []AccountModel `json:"system_models"`
 }
 
 // AssetResult returned from Elastic
@@ -172,7 +172,14 @@ func GetAssetMapping(prefix string) es.IndexTemplate {
 						"type": "text",
 					},
 					"system_models": es.Obj{
-						"type": "keyword",
+						"properties": es.Obj{
+							"account_id": es.Obj{
+								"type": "keyword",
+							},
+							"model_id": es.Obj{
+								"type": "keyword",
+							},
+						},
 					},
 					"account_models": es.Obj{
 						"properties": es.Obj{

@@ -1,14 +1,3 @@
-// Copyright 2019 txn2
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//     http://www.apache.org/licenses/LICENSE-2.0
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package provision
 
 import (
@@ -18,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/txn2/ack"
-	"github.com/txn2/es"
+	"github.com/txn2/es/v2"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -73,14 +62,14 @@ type Auth struct {
 
 // UpsertUser inserts or updates a user record. Elasticsearch
 // treats documents as immutable.
-func (a *Api) UpsertUser(user *User) (int, es.Result, error) {
+func (a *Api) UpsertUser(user *User) (int, es.Result, *es.ErrorResponse, error) {
 	a.Logger.Info("Upsert user record", zap.String("id", user.Id), zap.String("display_name", user.DisplayName))
 
 	// attempt to encrypt the password if one was provided
 	// otherwise populate with existing
 	err := user.CheckEncryptPassword(a)
 	if err != nil {
-		return 500, es.Result{}, err
+		return 500, es.Result{}, nil, err
 	}
 
 	return a.Elastic.PutObj(fmt.Sprintf("%s/_doc/%s", a.IdxPrefix+IdxUser, user.Id), user)
@@ -97,11 +86,16 @@ func (a *Api) UpsertUserHandler(c *gin.Context) {
 		return
 	}
 
-	code, esResult, err := a.UpsertUser(user)
+	code, esResult, errorResponse, err := a.UpsertUser(user)
 	if err != nil {
 		a.Logger.Error("Upsert failure.", zap.Error(err))
 		ak.SetPayloadType("ErrorMessage")
 		ak.SetPayload("there was a problem upserting the user")
+		if errorResponse != nil {
+			a.Logger.Error("EsErrorResponse", zap.String("es_error_response", errorResponse.Message))
+			ak.SetPayloadType("EsErrorResponse")
+			ak.SetPayload(errorResponse)
+		}
 		ak.GinErrorAbort(500, "UpsertError", err.Error())
 		return
 	}

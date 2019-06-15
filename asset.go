@@ -1,14 +1,3 @@
-// Copyright 2019 txn2
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//     http://www.apache.org/licenses/LICENSE-2.0
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package provision
 
 import (
@@ -17,29 +6,29 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/txn2/ack"
-	"github.com/txn2/es"
+	"github.com/txn2/es/v2"
 	"go.uber.org/zap"
 )
 
 const IdxAsset = "asset"
 
-// AccountModel
-type AccountModel struct {
+// Route
+type Route struct {
 	AccountId string `json:"account_id"`
 	ModelId   string `json:"model_id"`
+	Type      string `json:"type"`
 }
 
 // Asset defines an asset object
 type Asset struct {
-	Id            string         `json:"id"`
-	AccountId     string         `json:"account_id"`
-	Description   string         `json:"description"`
-	DisplayName   string         `json:"display_name"`
-	AssetClass    string         `json:"asset_class"`
-	AssetCfg      string         `json:"asset_cfg"`
-	Active        bool           `json:"active"`
-	AccountModels []AccountModel `json:"account_models"`
-	SystemModels  []AccountModel `json:"system_models"`
+	Id          string  `json:"id"`
+	AccountId   string  `json:"account_id"`
+	Description string  `json:"description"`
+	DisplayName string  `json:"display_name"`
+	AssetClass  string  `json:"asset_class"`
+	AssetCfg    string  `json:"asset_cfg"`
+	Active      bool    `json:"active"`
+	Routes      []Route `json:"routes"`
 }
 
 // AssetResult returned from Elastic
@@ -54,6 +43,106 @@ type AssetResultAck struct {
 	Payload AssetResult `json:"payload"`
 }
 
+// AssetSummaryResult
+type AssetSummaryResult struct {
+	es.Result
+	Source Account `json:"_source"`
+}
+
+// AccountSummary
+type AssetSummary struct {
+	Id          string   `json:"id"`
+	DisplayName string   `json:"display_name"`
+	Description string   `json:"description"`
+	Active      bool     `json:"active"`
+	Modules     []string `json:"modules"`
+}
+
+// AccountSummaryResults
+type AssetSummaryResults struct {
+	es.SearchResults
+	Hits struct {
+		Total    int                  `json:"total"`
+		MaxScore float64              `json:"max_score"`
+		Hits     []AssetSummaryResult `json:"hits"`
+	} `json:"hits"`
+}
+
+// GetAdmAssetsHandler
+// @todo re-associate an asset from one account to another
+func (a *Api) AssetAdmAssocHandler(c *gin.Context) {
+
+}
+
+// GetAdmAssetsHandler
+// is same as parentAccount or account is a child of parentAccount
+func (a *Api) GetAdmAssetsHandler(c *gin.Context) {
+	ak := ack.Gin(c)
+
+	// @todo check that parent has permission to access
+	// child or is the same
+	//parentAccountId := c.Param("parentAccount")
+	accountId := c.Param("account")
+
+	code, esResult, errorResponse, err := a.AssetAdmAssoc(accountId)
+	if err != nil {
+		a.Logger.Error("EsError", zap.Error(err))
+		ak.SetPayloadType("EsError")
+		ak.SetPayload("Error communicating with database.")
+		if errorResponse != nil {
+			a.Logger.Error("EsErrorResponse", zap.String("es_error_response", errorResponse.Message))
+			ak.SetPayload(errorResponse)
+		}
+		ak.GinErrorAbort(500, "EsError", err.Error())
+		return
+	}
+
+	if code >= 400 && code < 500 {
+		ak.SetPayload(errorResponse)
+		if errorResponse != nil {
+			a.Logger.Error("EsErrorResponse", zap.String("es_error_response", errorResponse.Message))
+			ak.SetPayload(errorResponse)
+		}
+		ak.GinErrorAbort(code, "SearchError", "There was a problem searching")
+		return
+	}
+
+	ak.SetPayloadType("AssetSummaryResults")
+	ak.GinSend(esResult)
+}
+
+// AssetAdmAssoc
+func (a *Api) AssetAdmAssoc(accountId string) (int, AssetSummaryResults, *es.ErrorResponse, error) {
+	query := es.Obj{
+		"query": es.Obj{
+			"nested": es.Obj{
+				"path": "routes",
+				"query": es.Obj{
+					"bool": es.Obj{
+						"must": []es.Obj{
+							{
+								"match": es.Obj{"routes.account_id": accountId},
+							},
+						},
+					},
+				},
+			},
+		},
+		"sort": es.Obj{
+			"id": "asc",
+		},
+	}
+
+	asResults := &AssetSummaryResults{}
+
+	code, errorResponse, err := a.Elastic.PostObjUnmarshal(fmt.Sprintf("%s/_search", a.IdxPrefix+IdxAsset), query, asResults)
+	if err != nil {
+		return code, *asResults, errorResponse, err
+	}
+
+	return code, *asResults, errorResponse, nil
+}
+
 // UpsertAssetHandler
 func (a *Api) UpsertAssetHandler(c *gin.Context) {
 	ak := ack.Gin(c)
@@ -65,18 +154,21 @@ func (a *Api) UpsertAssetHandler(c *gin.Context) {
 		return
 	}
 
-	code, esResult, err := a.UpsertAsset(asset)
+	code, esResult, errorResponse, err := a.UpsertAsset(asset)
 	if err != nil {
 		a.Logger.Error("EsError", zap.Error(err))
 		ak.SetPayloadType("EsError")
 		ak.SetPayload("Error communicating with database.")
+		if errorResponse != nil {
+			a.Logger.Error("EsErrorResponse", zap.String("es_error_response", errorResponse.Message))
+			ak.SetPayload(errorResponse)
+		}
 		ak.GinErrorAbort(500, "EsError", err.Error())
 		return
 	}
 
 	if code < 200 || code >= 300 {
 		a.Logger.Error("Es returned a non 200")
-		ak.SetPayloadType("EsError")
 		ak.SetPayload(esResult)
 		ak.GinErrorAbort(500, "EsError", "Es returned a non 200")
 		return
@@ -88,7 +180,7 @@ func (a *Api) UpsertAssetHandler(c *gin.Context) {
 
 // UpsertAccount inserts or updates an asset. Elasticsearch
 // treats documents as immutable.
-func (a *Api) UpsertAsset(asset *Asset) (int, es.Result, error) {
+func (a *Api) UpsertAsset(asset *Asset) (int, es.Result, *es.ErrorResponse, error) {
 	a.Logger.Info("Upsert asset record", zap.String("asset_id", asset.Id), zap.String("display_name", asset.DisplayName))
 
 	return a.Elastic.PutObj(fmt.Sprintf("%s/_doc/%s", a.IdxPrefix+IdxAsset, asset.Id), asset)
@@ -171,7 +263,8 @@ func GetAssetMapping(prefix string) es.IndexTemplate {
 					"asset_cfg": es.Obj{
 						"type": "text",
 					},
-					"system_models": es.Obj{
+					"routes": es.Obj{
+						"type": "nested",
 						"properties": es.Obj{
 							"account_id": es.Obj{
 								"type": "keyword",
@@ -179,14 +272,7 @@ func GetAssetMapping(prefix string) es.IndexTemplate {
 							"model_id": es.Obj{
 								"type": "keyword",
 							},
-						},
-					},
-					"account_models": es.Obj{
-						"properties": es.Obj{
-							"account_id": es.Obj{
-								"type": "keyword",
-							},
-							"model_id": es.Obj{
+							"type": es.Obj{
 								"type": "keyword",
 							},
 						},

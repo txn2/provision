@@ -1,14 +1,3 @@
-// Copyright 2019 txn2
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//     http://www.apache.org/licenses/LICENSE-2.0
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package provision
 
 import (
@@ -16,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/txn2/ack"
-	"github.com/txn2/es"
+	"github.com/txn2/es/v2"
 	"go.uber.org/zap"
 )
 
@@ -69,16 +58,16 @@ type UserSearchResultsAck struct {
 }
 
 // SearchAssets
-func (a *Api) SearchAssets(searchObj *es.Obj) (int, AssetSearchResults, error) {
+func (a *Api) SearchAssets(searchObj *es.Obj) (int, AssetSearchResults, *es.ErrorResponse, error) {
 	asResults := &AssetSearchResults{}
 
-	code, err := a.Elastic.PostObjUnmarshal(fmt.Sprintf("%s/_search", a.IdxPrefix+IdxAsset), searchObj, asResults)
+	code, errorResponse, err := a.Elastic.PostObjUnmarshal(fmt.Sprintf("%s/_search", a.IdxPrefix+IdxAsset), searchObj, asResults)
 	if err != nil {
 		a.Logger.Error("EsError", zap.Error(err))
-		return code, *asResults, err
+		return code, *asResults, errorResponse, err
 	}
 
-	return code, *asResults, nil
+	return code, *asResults, nil, nil
 }
 
 // SearchAssetsHandler
@@ -92,12 +81,17 @@ func (a *Api) SearchAssetsHandler(c *gin.Context) {
 		return
 	}
 
-	code, esResult, err := a.SearchAssets(obj)
+	code, esResult, errorResponse, err := a.SearchAssets(obj)
 	if err != nil {
 		a.Logger.Error("EsError", zap.Error(err))
 		ak.SetPayloadType("EsError")
 		ak.SetPayload("Error communicating with database.")
-		ak.GinErrorAbort(500, "EsError", err.Error())
+		if errorResponse != nil {
+			a.Logger.Error("EsErrorResponse", zap.String("es_error_response", errorResponse.Message))
+			ak.SetPayloadType("EsErrorResponse")
+			ak.SetPayload(errorResponse)
+		}
+		ak.GinErrorAbort(code, "EsError", err.Error())
 		return
 	}
 
@@ -112,13 +106,12 @@ func (a *Api) SearchAssetsHandler(c *gin.Context) {
 }
 
 // SearchAccounts
-func (a *Api) SearchAccounts(searchObj *es.Obj) (int, AccountSearchResults, error) {
+func (a *Api) SearchAccounts(searchObj *es.Obj) (int, AccountSearchResults, *es.ErrorResponse, error) {
 	asResults := &AccountSearchResults{}
 
-	code, err := a.Elastic.PostObjUnmarshal(fmt.Sprintf("%s/_search", a.IdxPrefix+IdxAccount), searchObj, asResults)
+	code, errorResponse, err := a.Elastic.PostObjUnmarshal(fmt.Sprintf("%s/_search", a.IdxPrefix+IdxAccount), searchObj, asResults)
 	if err != nil {
-		a.Logger.Error("EsError", zap.Error(err))
-		return code, *asResults, err
+		return code, *asResults, errorResponse, err
 	}
 
 	// Redact Keys
@@ -128,7 +121,7 @@ func (a *Api) SearchAccounts(searchObj *es.Obj) (int, AccountSearchResults, erro
 		}
 	}
 
-	return code, *asResults, nil
+	return code, *asResults, nil, nil
 }
 
 // SearchAccountsHandler
@@ -142,11 +135,16 @@ func (a *Api) SearchAccountsHandler(c *gin.Context) {
 		return
 	}
 
-	code, esResult, err := a.SearchAccounts(obj)
+	code, esResult, errorResponse, err := a.SearchAccounts(obj)
 	if err != nil {
 		a.Logger.Error("EsError", zap.Error(err))
 		ak.SetPayloadType("EsError")
 		ak.SetPayload("Error communicating with database.")
+		if errorResponse != nil {
+			a.Logger.Error("EsErrorResponse", zap.String("es_error_response", errorResponse.Message))
+			ak.SetPayloadType("EsErrorResponse")
+			ak.SetPayload(errorResponse)
+		}
 		ak.GinErrorAbort(500, "EsError", err.Error())
 		return
 	}
@@ -162,13 +160,12 @@ func (a *Api) SearchAccountsHandler(c *gin.Context) {
 }
 
 // SearchUsers
-func (a *Api) SearchUsers(searchObj *es.Obj) (int, UserSearchResults, error) {
+func (a *Api) SearchUsers(searchObj *es.Obj) (int, UserSearchResults, *es.ErrorResponse, error) {
 	usResults := &UserSearchResults{}
 
-	code, err := a.Elastic.PostObjUnmarshal(fmt.Sprintf("%s/_search", a.IdxPrefix+IdxUser), searchObj, usResults)
+	code, errorResponse, err := a.Elastic.PostObjUnmarshal(fmt.Sprintf("%s/_search", a.IdxPrefix+IdxUser), searchObj, usResults)
 	if err != nil {
-		a.Logger.Error("EsError", zap.Error(err))
-		return code, *usResults, err
+		return code, *usResults, errorResponse, err
 	}
 
 	// Redact Passwords
@@ -176,7 +173,7 @@ func (a *Api) SearchUsers(searchObj *es.Obj) (int, UserSearchResults, error) {
 		usResults.Hits.Hits[i].Source.Password = RedactMsg
 	}
 
-	return code, *usResults, nil
+	return code, *usResults, nil, nil
 }
 
 // SearchUsersHandler
@@ -191,11 +188,16 @@ func (a *Api) SearchUsersHandler(c *gin.Context) {
 		return
 	}
 
-	code, esResult, err := a.SearchUsers(obj)
+	code, esResult, errorResponse, err := a.SearchUsers(obj)
 	if err != nil {
 		a.Logger.Error("EsError", zap.Error(err))
 		ak.SetPayloadType("EsError")
 		ak.SetPayload("Error communicating with database.")
+		if errorResponse != nil {
+			a.Logger.Error("EsErrorResponse", zap.String("es_error_response", errorResponse.Message))
+			ak.SetPayloadType("EsErrorResponse")
+			ak.SetPayload(errorResponse)
+		}
 		ak.GinErrorAbort(500, "EsError", err.Error())
 		return
 	}

@@ -1,14 +1,3 @@
-// Copyright 2019 txn2
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//     http://www.apache.org/licenses/LICENSE-2.0
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package provision
 
 import (
@@ -18,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/txn2/ack"
-	"github.com/txn2/es"
+	"github.com/txn2/es/v2"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -57,6 +46,159 @@ type AccountResultAck struct {
 	Payload AccountResult `json:"payload"`
 }
 
+// AccountResult
+type AccountSummaryResult struct {
+	es.Result
+	Source AccountSummary `json:"_source"`
+}
+
+// AccountSummary
+type AccountSummary struct {
+	Id          string   `json:"id"`
+	DisplayName string   `json:"display_name"`
+	Description string   `json:"description"`
+	Active      bool     `json:"active"`
+	Modules     []string `json:"modules"`
+}
+
+// AccountSummaryResults
+type AccountSummaryResults struct {
+	es.SearchResults
+	Hits struct {
+		Total    int                    `json:"total"`
+		MaxScore float64                `json:"max_score"`
+		Hits     []AccountSummaryResult `json:"hits"`
+	} `json:"hits"`
+}
+
+// GetAdmChildAccounts
+// get a list of account with a parent account id
+func (a *Api) GetAdmChildAccounts(accountId string) (int, AccountSummaryResults, *es.ErrorResponse, error) {
+	query := es.Obj{
+		"_source": []string{"id", "display_name", "description", "active", "modules"},
+		"query": es.Obj{
+			"constant_score": es.Obj{
+				"filter": es.Obj{
+					"term": es.Obj{
+						"parent": accountId,
+					},
+				},
+			},
+		},
+		"sort": es.Obj{
+			"id": es.Obj{
+				"order": "asc",
+			},
+		},
+	}
+
+	asResults := &AccountSummaryResults{}
+
+	code, errorResponse, err := a.Elastic.PostObjUnmarshal(fmt.Sprintf("%s/_search", a.IdxPrefix+IdxAccount), query, asResults)
+	if err != nil {
+		return code, *asResults, errorResponse, err
+	}
+
+	return code, *asResults, nil, nil
+}
+
+// GetAdmChildAccountsHandler
+func (a *Api) GetAdmChildAccountsHandler(c *gin.Context) {
+	ak := ack.Gin(c)
+
+	parentAccountId := c.Param("parentAccount")
+
+	code, esResult, errorResonse, err := a.GetAdmChildAccounts(parentAccountId)
+	if err != nil {
+		a.Logger.Error("EsError", zap.Error(err))
+		ak.SetPayloadType("EsError")
+		ak.SetPayload("Error communicating with database.")
+		if errorResonse != nil {
+			ak.SetPayloadType("EsErrorResponse")
+			ak.SetPayload(errorResonse)
+		}
+		ak.GinErrorAbort(500, "EsError", err.Error())
+		return
+	}
+
+	if code >= 400 && code < 500 {
+		ak.SetPayload(esResult)
+		ak.GinErrorAbort(code, "SearchError", "There was a problem searching")
+		return
+	}
+
+	ak.SetPayloadType("AccountSummaryResults")
+	ak.GinSend(esResult)
+}
+
+// GetAdmAccountHandler
+func (a *Api) GetAdmAccountHandler(c *gin.Context) {
+	ak := ack.Gin(c)
+	parentAccountId := c.Param("parentAccount")
+	accountId := c.Param("account")
+
+	code, account, err := a.GetAccount(accountId)
+	if err != nil {
+		a.Logger.Error("GetAdmAccountError", zap.Int("code", code), zap.Error(err))
+		ak.SetPayloadType("GetAdmAccountError")
+		ak.SetPayload("Error communicating with database.")
+		ak.GinErrorAbort(code, "EsError", err.Error())
+		return
+	}
+
+	// if the account is not looking up data
+	// on it self then check to see if the child account
+	// has the requesting account as a parent
+	if parentAccountId != accountId && parentAccountId != account.Source.Parent {
+		ak.SetPayload("Account requested is not a child of requester.")
+		ak.GinErrorAbort(code, "AccountAccessError", ak.Ack.Payload.(string))
+		return
+	}
+
+	ak.SetPayloadType("AccountResult")
+	ak.GinSend(account)
+}
+
+// UpsertAccountHandler
+func (a *Api) UpsertAdmChildAccountHandler(c *gin.Context) {
+	ak := ack.Gin(c)
+
+	account := &Account{}
+	err := ak.UnmarshalPostAbort(account)
+	if err != nil {
+		a.Logger.Error("Upsert failure.", zap.Error(err))
+		return
+	}
+
+	// Adm account must have the requesting account as the parent
+	parentAccountId := c.Param("parentAccount")
+	account.Parent = parentAccountId
+
+	code, esResult, errorResonse, err := a.UpsertAccount(account)
+	if err != nil {
+		a.Logger.Error("EsError", zap.Error(err))
+		ak.SetPayloadType("EsError")
+		ak.SetPayload("Error communicating with database.")
+		if errorResonse != nil {
+			ak.SetPayloadType("EsErrorResponse")
+			ak.SetPayload(errorResonse)
+		}
+		ak.GinErrorAbort(500, "EsError", err.Error())
+		return
+	}
+
+	if code < 200 || code >= 300 {
+		a.Logger.Error("Es returned a non 200")
+		ak.SetPayloadType("EsError")
+		ak.SetPayload(esResult)
+		ak.GinErrorAbort(500, "EsError", "Es returned a non 200")
+		return
+	}
+
+	ak.SetPayloadType("EsResult")
+	ak.GinSend(esResult)
+}
+
 // UpsertAccountHandler
 func (a *Api) UpsertAccountHandler(c *gin.Context) {
 	ak := ack.Gin(c)
@@ -68,11 +210,16 @@ func (a *Api) UpsertAccountHandler(c *gin.Context) {
 		return
 	}
 
-	code, esResult, err := a.UpsertAccount(account)
+	code, esResult, errorResponse, err := a.UpsertAccount(account)
 	if err != nil {
 		a.Logger.Error("EsError", zap.Error(err))
 		ak.SetPayloadType("EsError")
 		ak.SetPayload("Error communicating with database.")
+		if errorResponse != nil {
+			a.Logger.Error("EsErrorResponse", zap.String("es_error_response", errorResponse.Message))
+			ak.SetPayloadType("EsErrorResponse")
+			ak.SetPayload(errorResponse)
+		}
 		ak.GinErrorAbort(500, "EsError", err.Error())
 		return
 	}
@@ -91,7 +238,7 @@ func (a *Api) UpsertAccountHandler(c *gin.Context) {
 
 // UpsertAccount inserts or updates an account. Elasticsearch
 // treats documents as immutable.
-func (a *Api) UpsertAccount(account *Account) (int, es.Result, error) {
+func (a *Api) UpsertAccount(account *Account) (int, es.Result, *es.ErrorResponse, error) {
 	a.Logger.Info("Upsert account record", zap.String("id", account.Id), zap.String("display_name", account.DisplayName))
 
 	code, accountRes, _ := a.GetAccount(account.Id)
@@ -103,7 +250,7 @@ func (a *Api) UpsertAccount(account *Account) (int, es.Result, error) {
 	// otherwise populate with existing
 	err := account.CheckEncryptKeys(a)
 	if err != nil {
-		return 500, es.Result{}, err
+		return 500, es.Result{}, nil, err
 	}
 
 	return a.Elastic.PutObj(fmt.Sprintf("%s/_doc/%s", a.IdxPrefix+IdxAccount, account.Id), account)

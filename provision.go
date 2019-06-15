@@ -20,7 +20,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/txn2/ack"
-	"github.com/txn2/es"
+	"github.com/txn2/es/v2"
 	"github.com/txn2/micro"
 	"github.com/txn2/token"
 	"go.uber.org/zap"
@@ -112,14 +112,18 @@ func (a *Api) SendEsMapping(mapping es.IndexTemplate) error {
 		zap.String("mapping", mapping.Name),
 	)
 
-	code, esResult, err := a.Elastic.PutObj(fmt.Sprintf("_template/%s", mapping.Name), mapping.Template)
+	code, esResult, errorResponse, err := a.Elastic.PutObj(fmt.Sprintf("_template/%s", mapping.Name), mapping.Template)
 	if err != nil {
 		a.Logger.Error("Got error sending template", zap.Error(err))
+		a.Logger.Error("EsErrorResponse", zap.String("es_error_response", errorResponse.Message))
 		return err
 	}
 
 	if code != 200 {
 		a.Logger.Error("Got code", zap.Int("code", code), zap.String("EsResult", esResult.ResultType))
+		if errorResponse != nil {
+			a.Logger.Error("EsErrorResponse", zap.String("es_error_response", errorResponse.Message))
+		}
 		return errors.New("Error setting up " + mapping.Name + " template, got code " + string(code))
 	}
 

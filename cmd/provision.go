@@ -96,11 +96,7 @@ func main() {
 	adm.GET("/assets/:account", provApi.GetAdmAssetsHandler)
 
 	// Asset Re-Association
-	// re-associate an asset with an account and model
-	// an existing association to the parent or one of the
-	// children is required.
-	// @todo implement
-	adm.POST("/assetAssoc", provApi.AssetAdmAssocHandler)
+	adm.GET("/assetAssoc/:asset/:accountFrom/:accountTo", provApi.AssetAdmAssocHandler)
 
 	// run provisioning server
 	server.Run()

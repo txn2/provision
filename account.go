@@ -85,16 +85,18 @@ func (a *Api) GetAdmChildAccounts(accountId string) (int, AccountSummaryResults,
 				},
 			},
 		},
-		"sort": es.Obj{
-			"id": es.Obj{
-				"order": "asc",
-			},
-		},
 	}
+
+	js, _ := json.Marshal(query)
+
+	pth := fmt.Sprintf("%s/_search", a.IdxPrefix+IdxAccount)
+
+	a.Logger.Info("Searching", zap.String("url", pth))
+	a.Logger.Info("Query", zap.ByteString("json", js))
 
 	asResults := &AccountSummaryResults{}
 
-	code, errorResponse, err := a.Elastic.PostObjUnmarshal(fmt.Sprintf("%s/_search", a.IdxPrefix+IdxAccount), query, asResults)
+	code, errorResponse, err := a.Elastic.PostObjUnmarshal(pth, query, asResults)
 	if err != nil {
 		return code, *asResults, errorResponse, err
 	}
@@ -108,21 +110,21 @@ func (a *Api) GetAdmChildAccountsHandler(c *gin.Context) {
 
 	parentAccountId := c.Param("parentAccount")
 
-	code, esResult, errorResonse, err := a.GetAdmChildAccounts(parentAccountId)
+	code, esResult, errorResponse, err := a.GetAdmChildAccounts(parentAccountId)
 	if err != nil {
 		a.Logger.Error("EsError", zap.Error(err))
 		ak.SetPayloadType("EsError")
 		ak.SetPayload("Error communicating with database.")
-		if errorResonse != nil {
+		if errorResponse != nil {
 			ak.SetPayloadType("EsErrorResponse")
-			ak.SetPayload(errorResonse)
+			ak.SetPayload(errorResponse)
 		}
 		ak.GinErrorAbort(500, "EsError", err.Error())
 		return
 	}
 
 	if code >= 400 && code < 500 {
-		ak.SetPayload(esResult)
+		ak.SetPayload(errorResponse)
 		ak.GinErrorAbort(code, "SearchError", "There was a problem searching")
 		return
 	}
@@ -170,8 +172,19 @@ func (a *Api) UpsertAdmChildAccountHandler(c *gin.Context) {
 		return
 	}
 
-	// Adm account must have the requesting account as the parent
 	parentAccountId := c.Param("parentAccount")
+
+	code, accountRes, _ := a.GetAccount(account.Id)
+	if code == 200 {
+		if accountRes.Source.Parent != parentAccountId {
+			ak.SetPayloadType("ValidationError")
+			ak.SetPayload("Account exists but does not belong to parent.")
+			ak.GinErrorAbort(500, "ValidationError", "Account does not belong to parent.")
+			return
+		}
+	}
+
+	// Adm account must have the requesting account as the parent
 	account.Parent = parentAccountId
 
 	code, esResult, errorResonse, err := a.UpsertAccount(account)

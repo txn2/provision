@@ -69,9 +69,103 @@ type AssetSummaryResults struct {
 }
 
 // GetAdmAssetsHandler
-// @todo re-associate an asset from one account to another
 func (a *Api) AssetAdmAssocHandler(c *gin.Context) {
+	ak := ack.Gin(c)
 
+	parentAccountId := c.Param("parentAccount")
+	assetId := c.Param("asset")
+	accountFromId := c.Param("accountFrom")
+	accountToId := c.Param("accountTo")
+
+	a.Logger.Info("Re-associate asset attempt.",
+		zap.String("parentAccount", parentAccountId),
+		zap.String("accountFrom", accountFromId),
+		zap.String("accountTo", accountToId))
+
+	if parentAccountId != accountFromId {
+		// get account from
+		code, accountFrom, err := a.GetAccount(accountFromId)
+		if err != nil {
+			a.Logger.Error("GetAdmAccountError", zap.Int("code", code), zap.Error(err))
+			ak.SetPayloadType("GetAdmAccountError")
+			ak.SetPayload("Error communicating with database.")
+			ak.GinErrorAbort(code, "EsError", err.Error())
+			return
+		}
+
+		if parentAccountId != accountFrom.Source.Parent {
+			ak.SetPayload("From account is not a child of requester (or the requestor).")
+			ak.GinErrorAbort(code, "AccountAccessError", ak.Ack.Payload.(string))
+			return
+		}
+	}
+
+	if parentAccountId != accountToId {
+		// get account to
+		code, accountTo, err := a.GetAccount(accountToId)
+		if err != nil {
+			a.Logger.Error("GetAdmAccountError", zap.Int("code", code), zap.Error(err))
+			ak.SetPayloadType("GetAdmAccountError")
+			ak.SetPayload("Error communicating with database.")
+			ak.GinErrorAbort(code, "EsError", err.Error())
+			return
+		}
+
+		if parentAccountId != accountTo.Source.Parent {
+			ak.SetPayload("To account is not a child of requester (or the requestor).")
+			ak.GinErrorAbort(code, "AccountAccessError", ak.Ack.Payload.(string))
+			return
+		}
+	}
+
+	// get the asset and requested
+	code, assetResult, err := a.GetAsset(assetId)
+	if err != nil {
+		a.Logger.Error("EsError", zap.Error(err))
+		ak.SetPayloadType("EsError")
+		ak.SetPayload("Error communicating with database.")
+		ak.GinErrorAbort(500, "EsError", err.Error())
+		return
+	}
+
+	if code >= 400 && code < 500 {
+		ak.SetPayload("Asset " + assetId + " not found.")
+		ak.GinErrorAbort(404, "AssetNotFound", "Asset not found")
+		return
+	}
+
+	ii := 0
+
+	for i, rt := range assetResult.Source.Routes {
+		a.Logger.Info("Route", zap.String("account_id", rt.AccountId))
+		if rt.AccountId == accountFromId {
+			ii++
+			assetResult.Source.Routes[i].AccountId = accountToId
+		}
+	}
+
+	if ii < 1 {
+		ak.SetPayloadType("AssociationError")
+		ak.SetPayload("No routes to re-associate.")
+		ak.GinErrorAbort(404, "NoAssociated", ak.Ack.Payload.(string))
+		return
+	}
+
+	code, esResult, errorResponse, err := a.UpsertAsset(&assetResult.Source)
+	if err != nil {
+		a.Logger.Error("EsError", zap.Error(err))
+		ak.SetPayloadType("EsError")
+		ak.SetPayload("Error communicating with database.")
+		if errorResponse != nil {
+			a.Logger.Error("EsErrorResponse", zap.String("es_error_response", errorResponse.Message))
+			ak.SetPayload(errorResponse)
+		}
+		ak.GinErrorAbort(500, "EsError", err.Error())
+		return
+	}
+
+	ak.SetPayloadType("Result")
+	ak.GinSend(esResult)
 }
 
 // GetAdmAssetsHandler

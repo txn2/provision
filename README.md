@@ -26,26 +26,27 @@ following configuration is specific to **provision**:
 
 ## Routes
 
-| Method | Route Pattern                        | Description                                                      |
-|:-------|:-------------------------------------|:-----------------------------------------------------------------|
-| GET    | [/prefix](#get-prefix)               | Get the prefix used for Elasticsearch indexes.                   |
-| POST   | [/account](#upsert-account)          | Upsert an Account object.                                        |
-| GET    | [/account/:id](#get-account)         | Get an Account ojbect by id.                                     |
-| POST   | [/keyCheck/:id](#check-key)          | Check if an AccessKey is associated with an account.             |
-| POST   | [/searchAccounts](#search-accounts)  | Search for Accounts with a Lucene query.                         |
-| POST   | [/user](#upsert-user)                | Upsert a User object.                                            |
-| GET    | [/user/:id](#get-user)               | Get a User object by id.                                         |
-| POST   | [/searchUsers](#search-users)        | Search for Users with a Lucene query.                            |
-| POST   | [/userHasAccess](#access-check)      | Post an AccessCheck object with Token to determine basic access. |
-| POST   | [/userHasAdminAccess](#access-check) | Post an AccessCheck object with Token to determine admin access. |
-| POST   | [/authUser](#authenticate-user)      | Post Credentials and if valid receive a Token.                   |
-| POST   | [/asset](#upsert-asset)              | Upsert an Asset.                                                 |
-| GET    | [/asset/:id](#get-asset)             | Get an asset by id.                                              |
-| POST   | [/searchAssets](#search-assets)      | Search for Assets with a Lucene query.                           |
-| GET    | /adm/:parentAccount/account/:account | Get a child account.                                             |
-| POST   | /adm/:parentAccount/account          | Upsert a child account.                                          |
-| GET    | /adm/:parentAccount/children         | Get children of parent account.                                  |
-| GET    | /adm/:parentAccount/assets/:account  | Get assets with associations to account.                         |
+| Method | Route Pattern                                             | Description                                                               |
+|:-------|:----------------------------------------------------------|:--------------------------------------------------------------------------|
+| GET    | [/prefix](#get-prefix)                                    | Get the prefix used for Elasticsearch indexes.                            |
+| POST   | [/account](#upsert-account)                               | Upsert an Account object.                                                 |
+| GET    | [/account/:id](#get-account)                              | Get an Account ojbect by id.                                              |
+| POST   | [/keyCheck/:id](#check-key)                               | Check if an AccessKey is associated with an account.                      |
+| POST   | [/searchAccounts](#search-accounts)                       | Search for Accounts with a Lucene query.                                  |
+| POST   | [/user](#upsert-user)                                     | Upsert a User object.                                                     |
+| GET    | [/user/:id](#get-user)                                    | Get a User object by id.                                                  |
+| POST   | [/searchUsers](#search-users)                             | Search for Users with a Lucene query.                                     |
+| POST   | [/userHasAccess](#access-check)                           | Post an AccessCheck object with Token to determine basic access.          |
+| POST   | [/userHasAdminAccess](#access-check)                      | Post an AccessCheck object with Token to determine admin access.          |
+| POST   | [/authUser](#authenticate-user)                           | Post Credentials and if valid receive a Token.                            |
+| POST   | [/asset](#upsert-asset)                                   | Upsert an Asset.                                                          |
+| GET    | [/asset/:id](#get-asset)                                  | Get an asset by id.                                                       |
+| POST   | [/searchAssets](#search-assets)                           | Search for Assets with a Lucene query.                                    |
+| GET    | /adm/:parentAccount/account/:account                      | Get a child account.                                                      |
+| POST   | /adm/:parentAccount/account                               | Upsert a child account.                                                   |
+| GET    | /adm/:parentAccount/children                              | Get children of parent account.                                           |
+| GET    | /adm/:parentAccount/assets/:account                       | Get assets with associations to account.                                  |
+| GET    | /adm/:parrentId/assetAssoc/:asset/:accountFrom/:accountTo | Re-associate any routes from specified account to another (child or self) |
 
 
 ## Development

@@ -43,7 +43,7 @@ following configuration is specific to **provision**:
 | GET    | [/asset/:id](#get-asset)             | Get an asset by id.                                              |
 | POST   | [/searchAssets](#search-assets)      | Search for Assets with a Lucene query.                           |
 | GET    | /adm/:parentAccount/account/:account | Get a child account.                                             |
-| POST   | /adm/:parentAccount/account          | Upset a child account.                                           |
+| POST   | /adm/:parentAccount/account          | Upsert a child account.                                          |
 | GET    | /adm/:parentAccount/children         | Get children of parent account.                                  |
 | GET    | /adm/:parentAccount/assets/:account  | Get assets with associations to account.                         |
 
@@ -221,9 +221,9 @@ curl -X POST \
 	"display_name": "Asset 12345",
 	"active": true,
 	"asset_class": "iot_device",
-	"account_models": [
-		{ "account_id": "test", "model_id": "device_details" },
-		{ "account_id": "test", "model_id": "device_location" }
+	"routes": [
+		{ "account_id": "test", "model_id": "device_details", type: "system" },
+		{ "account_id": "test", "model_id": "device_location", type: "account" }
 	]
 }'
 ```

@@ -387,8 +387,8 @@ func GetAssetMapping(prefix string) es.IndexTemplate {
 									"parser": es.Obj{
 										"type": "keyword",
 									},
-									"cfg": es.Obj{
-										"type": "keyword",
+									"condition": es.Obj{
+										"type": "text",
 									},
 								},
 							},

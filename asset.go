@@ -13,9 +13,9 @@ import (
 const IdxAsset = "asset"
 
 // Condition
-type Condition struct {
-	Parser string `json:"parser"`
-	Cfg    string `json:"cfg"`
+type ConditionCfg struct {
+	Parser    string `json:"parser"`
+	Condition string `json:"condition"`
 }
 
 // Route
@@ -28,7 +28,7 @@ type Route struct {
 
 	// conditional routing used by
 	// edge parsers (qlrx, etc)
-	Conditions []Condition `json:"conditions"`
+	Conditions []ConditionCfg `json:"conditions"`
 }
 
 // Asset defines an asset object

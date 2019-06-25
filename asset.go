@@ -12,11 +12,23 @@ import (
 
 const IdxAsset = "asset"
 
+// Condition
+type Condition struct {
+	Parser string `json:"parser"`
+	Cfg    string `json:"cfg"`
+}
+
 // Route
 type Route struct {
 	AccountId string `json:"account_id"`
 	ModelId   string `json:"model_id"`
-	Type      string `json:"type"`
+
+	// system or account
+	Type string `json:"type"`
+
+	// conditional routing used by
+	// edge parsers (qlrx, etc)
+	Conditions []Condition `json:"conditions"`
 }
 
 // Asset defines an asset object
@@ -368,6 +380,17 @@ func GetAssetMapping(prefix string) es.IndexTemplate {
 							},
 							"type": es.Obj{
 								"type": "keyword",
+							},
+							"conditions": es.Obj{
+								"type": "nested",
+								"properties": es.Obj{
+									"parser": es.Obj{
+										"type": "keyword",
+									},
+									"cfg": es.Obj{
+										"type": "keyword",
+									},
+								},
 							},
 						},
 					},

@@ -16,22 +16,22 @@ const IdxAccount = "account"
 
 // AccessKey
 type AccessKey struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Key         string `json:"key"`
-	Active      bool   `json:"active"`
+	Name        string `json:"name" yaml:"name"`
+	Description string `json:"description" yaml:"description"`
+	Key         string `json:"key" yaml:"key"`
+	Active      bool   `json:"active" yaml:"active"`
 }
 
 // Account defines an account object
 type Account struct {
-	Id          string      `json:"id"`
-	Parent      string      `json:"parent"`
-	Description string      `json:"description"`
-	DisplayName string      `json:"display_name"`
-	Active      bool        `json:"active"`
-	Modules     []string    `json:"modules"`
-	OrgId       int         `json:"org_id"`
-	AccessKeys  []AccessKey `json:"access_keys"`
+	Id          string      `json:"id" yaml:"id"`
+	Parent      string      `json:"parent" yaml:"parent"`
+	Description string      `json:"description" yaml:"description"`
+	DisplayName string      `json:"display_name" yaml:"displayName"`
+	Active      bool        `json:"active" yaml:"active"`
+	Modules     []string    `json:"modules" yaml:"modules"`
+	OrgId       int         `json:"org_id" yaml:"orgId"`
+	AccessKeys  []AccessKey `json:"access_keys" yaml:"accessKeys"`
 }
 
 // AccountResult returned from Elastic
@@ -54,11 +54,11 @@ type AccountSummaryResult struct {
 
 // AccountSummary
 type AccountSummary struct {
-	Id          string   `json:"id"`
-	DisplayName string   `json:"display_name"`
-	Description string   `json:"description"`
-	Active      bool     `json:"active"`
-	Modules     []string `json:"modules"`
+	Id          string   `json:"id" yaml:"id"`
+	DisplayName string   `json:"display_name" yaml:"displayName"`
+	Description string   `json:"description" yaml:"description"`
+	Active      bool     `json:"active" yaml:"active"`
+	Modules     []string `json:"modules" yaml:"modules"`
 }
 
 // AccountSummaryResults

@@ -18,16 +18,16 @@ const RedactMsg = "REDACTED"
 
 // User defines a user object
 type User struct {
-	Id            string   `json:"id" mapstructure:"id"`
-	Description   string   `json:"description" mapstructure:"description"`
-	DisplayName   string   `json:"display_name" mapstructure:"display_name"`
-	Active        bool     `json:"active" mapstructure:"active"`
-	Sysop         bool     `json:"sysop" mapstructure:"sysop"`
-	Password      string   `json:"password" mapstructure:"password"`
-	Sections      []string `json:"sections" mapstructure:"sections"`
-	SectionsAll   bool     `json:"sections_all" mapstructure:"sections_all"`
-	Accounts      []string `json:"accounts" mapstructure:"accounts"`
-	AdminAccounts []string `json:"admin_accounts" mapstructure:"admin_accounts"`
+	Id            string   `json:"id" json:"id" mapstructure:"id"`
+	Description   string   `json:"description" yaml:"description" mapstructure:"description"`
+	DisplayName   string   `json:"display_name" yaml:"displayName" mapstructure:"display_name"`
+	Active        bool     `json:"active" yaml:"active" mapstructure:"active"`
+	Sysop         bool     `json:"sysop" yaml:"sysop" mapstructure:"sysop"`
+	Password      string   `json:"password" yaml:"password" mapstructure:"password"`
+	Sections      []string `json:"sections" yaml:"sections" mapstructure:"sections"`
+	SectionsAll   bool     `json:"sections_all" yaml:"sectionsAll" mapstructure:"sections_all"`
+	Accounts      []string `json:"accounts" yaml:"accounts" mapstructure:"accounts"`
+	AdminAccounts []string `json:"admin_accounts" yaml:"adminAccounts" mapstructure:"admin_accounts"`
 }
 
 // UserResult returned from Elastic

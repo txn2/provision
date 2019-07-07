@@ -20,27 +20,27 @@ type ConditionCfg struct {
 
 // Route
 type Route struct {
-	AccountId string `json:"account_id"`
-	ModelId   string `json:"model_id"`
+	AccountId string `json:"account_id" yaml:"accountId"`
+	ModelId   string `json:"model_id" yaml:"modelId"`
 
 	// system or account
-	Type string `json:"type"`
+	Type string `json:"type" yaml:"type"`
 
 	// conditional routing used by
 	// edge parsers (qlrx, etc)
-	Conditions []ConditionCfg `json:"conditions"`
+	Conditions []ConditionCfg `json:"conditions" yaml:"conditions"`
 }
 
 // Asset defines an asset object
 type Asset struct {
-	Id          string  `json:"id"`
-	AccountId   string  `json:"account_id"`
-	Description string  `json:"description"`
-	DisplayName string  `json:"display_name"`
-	AssetClass  string  `json:"asset_class"`
-	AssetCfg    string  `json:"asset_cfg"`
-	Active      bool    `json:"active"`
-	Routes      []Route `json:"routes"`
+	Id          string  `json:"id" yaml:"id"`
+	AccountId   string  `json:"account_id" yaml:"accountId"`
+	Description string  `json:"description" yaml:"description"`
+	DisplayName string  `json:"display_name" yaml:"displayName"`
+	AssetClass  string  `json:"asset_class" yaml:"assetClass"`
+	AssetCfg    string  `json:"asset_cfg" yaml:"assetCfg"`
+	Active      bool    `json:"active" yaml:"active"`
+	Routes      []Route `json:"routes" yaml:"routes"`
 }
 
 // AssetResult returned from Elastic
@@ -63,11 +63,11 @@ type AssetSummaryResult struct {
 
 // AccountSummary
 type AssetSummary struct {
-	Id          string   `json:"id"`
-	DisplayName string   `json:"display_name"`
-	Description string   `json:"description"`
-	Active      bool     `json:"active"`
-	Modules     []string `json:"modules"`
+	Id          string   `json:"id" yaml:"id"`
+	DisplayName string   `json:"display_name" yaml:"displayName"`
+	Description string   `json:"description" yaml:"description"`
+	Active      bool     `json:"active" yaml:"active"`
+	Modules     []string `json:"modules" yaml:"modules"`
 }
 
 // AccountSummaryResults

@@ -234,6 +234,7 @@ func (a *Api) AssetAdmAssoc(accountId string) (int, AssetSummaryResults, *es.Err
 				},
 			},
 		},
+		"size": 10000,
 		"sort": es.Obj{
 			"id": "asc",
 		},

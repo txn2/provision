@@ -21,6 +21,10 @@ type User struct {
 	Id            string   `json:"id" json:"id" mapstructure:"id"`
 	Description   string   `json:"description" yaml:"description" mapstructure:"description"`
 	DisplayName   string   `json:"display_name" yaml:"displayName" mapstructure:"display_name"`
+	Name          string   `json:"name" yaml:"name" mapstructure:"name"`
+	Email         string   `json:"email" yaml:"email" mapstructure:"email"`
+	EmailVerified bool     `json:"email_verified" yaml:"email_verified" mapstructure:"email_verified"`
+	Picture       string   `json:"picture" yaml:"picture" mapstructure:"picture"`
 	Active        bool     `json:"active" yaml:"active" mapstructure:"active"`
 	Sysop         bool     `json:"sysop" yaml:"sysop" mapstructure:"sysop"`
 	Password      string   `json:"password" yaml:"password" mapstructure:"password"`

@@ -98,6 +98,9 @@ func main() {
 	// Asset Re-Association
 	adm.GET("/assetAssoc/:asset/:accountFrom/:accountTo", provApi.AssetAdmAssocHandler)
 
+	// Upsert user for child account
+	adm.POST("/user", provApi.UpsertAdmChildAccountUserHandler)
+
 	// run provisioning server
 	server.Run()
 }

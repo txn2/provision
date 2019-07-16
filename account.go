@@ -161,6 +161,134 @@ func (a *Api) GetAdmAccountHandler(c *gin.Context) {
 	ak.GinSend(account)
 }
 
+// UpsertAdmChildAccountUserHandler
+func (a *Api) UpsertAdmChildAccountUserHandler(c *gin.Context) {
+	ak := ack.Gin(c)
+
+	// Unmarshal posed user object
+	user := &User{}
+	err := ak.UnmarshalPostAbort(user)
+	if err != nil {
+		a.Logger.Error("Upsert failure.", zap.Error(err))
+		return
+	}
+
+	// user must have at least one account association
+	if len(user.Accounts) < 1 {
+		ak.SetPayloadType("UserValidationError")
+		ak.SetPayload("User must have at least one account association.")
+		ak.GinErrorAbort(500, "UserValidationError", "No associated accounts specified.")
+		return
+	}
+
+	// Check to determine if the account we are trying to associate the user with
+	// is a child of the parentAccountId
+	parentAccountId := c.Param("parentAccount")
+
+	// All account associations must be a child of parentAccount
+	for _, acc := range user.Accounts {
+		code, accountRes, err := a.GetAccount(acc)
+		if err != nil {
+			ak.SetPayloadType("AccountLookupError")
+			ak.SetPayload("Unable to lookup account.")
+			ak.GinErrorAbort(500, "AccountLookupError", err.Error())
+			return
+		}
+		if code == 200 {
+			if accountRes.Source.Parent != parentAccountId {
+				ak.SetPayloadType("ValidationError")
+				ak.SetPayload("Account exists but does not belong to parent. All account must belong to parent.")
+				ak.GinErrorAbort(400, "ValidationError", "User account association does not belong to parent.")
+				return
+			}
+
+			continue
+		}
+
+		if accountRes.Source.Parent != parentAccountId {
+			ak.SetPayloadType("AccountAssociationError")
+			ak.SetPayload("The user exists and is associated with an account not owned by the requester.")
+			ak.GinErrorAbort(400, "AccountAssociationError", "Existing non-child account association.")
+			return
+		}
+	}
+
+	// Does the user already exist?
+	code, foundUserAccount, err := a.GetUser(user.Id)
+	if err != nil {
+		ak.SetPayloadType("UserLookupError")
+		ak.SetPayload("Unable to lookup user.")
+		ak.GinErrorAbort(500, "UserLookupError", err.Error())
+		return
+	}
+	if code == 200 {
+		// if the found user does not have account associated
+		// deny the request up update this user
+		if len(foundUserAccount.Source.Accounts) < 1 {
+			ak.SetPayloadType("PermissionError")
+			ak.SetPayload("Unable to lookup user.")
+			ak.GinErrorAbort(500, "UserLookupError", err.Error())
+			return
+		}
+
+		// found a user matching the one sent
+		// determine if any existing account associations are not child accounts
+		for _, acc := range foundUserAccount.Source.Accounts {
+			code, accountRes, err := a.GetAccount(acc)
+			if err != nil {
+				ak.SetPayloadType("AccountLookupError")
+				ak.SetPayload("Unable to lookup account.")
+				ak.GinErrorAbort(500, "AccountLookupError", err.Error())
+				return
+			}
+			if code == 200 {
+				if accountRes.Source.Parent != parentAccountId {
+					ak.SetPayloadType("ValidationError")
+					ak.SetPayload("Account exists but does not belong to parent. All account must belong to parent.")
+					ak.GinErrorAbort(400, "ValidationError", "User account association does not belong to parent.")
+					return
+				}
+
+				continue
+			}
+
+			if accountRes.Source.Parent != parentAccountId {
+				ak.SetPayloadType("AccountAssociationError")
+				ak.SetPayload("The user exists and is associated with an account not owned by the requester.")
+				ak.GinErrorAbort(400, "AccountAssociationError", "Existing non-child account association.")
+				return
+			}
+		}
+	}
+
+	// sanitize
+	user.Sysop = false
+
+	code, esResult, errorResonse, err := a.UpsertUser(user)
+	if err != nil {
+		a.Logger.Error("EsError", zap.Error(err))
+		ak.SetPayloadType("EsError")
+		ak.SetPayload("Error communicating with database.")
+		if errorResonse != nil {
+			ak.SetPayloadType("EsErrorResponse")
+			ak.SetPayload(errorResonse)
+		}
+		ak.GinErrorAbort(500, "EsError", err.Error())
+		return
+	}
+
+	if code < 200 || code >= 300 {
+		a.Logger.Error("Es returned a non 200")
+		ak.SetPayloadType("EsError")
+		ak.SetPayload(esResult)
+		ak.GinErrorAbort(500, "EsError", "Es returned a non 200")
+		return
+	}
+
+	ak.SetPayloadType("EsResult")
+	ak.GinSend(esResult)
+}
+
 // UpsertAccountHandler
 func (a *Api) UpsertAdmChildAccountHandler(c *gin.Context) {
 	ak := ack.Gin(c)

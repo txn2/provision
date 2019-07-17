@@ -213,6 +213,28 @@ func (a *Api) UpsertAdmChildAccountUserHandler(c *gin.Context) {
 		}
 	}
 
+	checkAdm := false
+	found := false
+	// All admin account associations must be present in the
+	// accounts section of the user
+	for _, admAcc := range user.AdminAccounts {
+		checkAdm = true
+		for _, acc := range user.Accounts {
+			if acc == admAcc {
+				found = true
+				break
+			}
+			found = false
+		}
+	}
+
+	if checkAdm == true && found == false {
+		ak.SetPayloadType("AdminAccountAssociationError")
+		ak.SetPayload("Admin account association not found in basic list of accounts.")
+		ak.GinErrorAbort(400, "AccountAssociationError", "Unauthorized account in admin accounts section.")
+		return
+	}
+
 	// Does the user already exist?
 	code, foundUserAccount, err := a.GetUser(user.Id)
 	if err != nil {

@@ -452,7 +452,7 @@ func (a *Api) CheckKeyHandler(c *gin.Context) {
 // CheckKey returns true if the provided key is valid for the account
 func (a *Api) CheckKey(accountId string, key AccessKey) (bool, error) {
 	// Get the requested account
-	code, accountResult, err := a.getAccountRaw(accountId)
+	code, accountResult, err := a.GetAccountRaw(accountId)
 	if err != nil {
 		return false, err
 	}
@@ -476,8 +476,8 @@ func (a *Api) CheckKey(accountId string, key AccessKey) (bool, error) {
 	return false, nil
 }
 
-// getAccountRaw returns raw account (un-redacted)
-func (a *Api) getAccountRaw(id string) (int, *AccountResult, error) {
+// GetAccountRaw returns raw account (un-redacted)
+func (a *Api) GetAccountRaw(id string) (int, *AccountResult, error) {
 
 	accountResult := &AccountResult{}
 
@@ -503,7 +503,7 @@ func (a *Api) getAccountRaw(id string) (int, *AccountResult, error) {
 // GetAccount
 func (a *Api) GetAccount(id string) (int, *AccountResult, error) {
 
-	code, accountResult, err := a.getAccountRaw(id)
+	code, accountResult, err := a.GetAccountRaw(id)
 	if err != nil || code != 200 {
 		return code, nil, err
 	}
@@ -545,7 +545,7 @@ func (a *Api) GetAccountHandler(c *gin.Context) {
 func (acnt *Account) CheckEncryptKeys(api *Api) error {
 
 	// does the account exist?
-	code, existingAccount, _ := api.GetAccount(acnt.Id)
+	code, existingAccount, _ := api.GetAccountRaw(acnt.Id)
 
 	// account exists
 	if code == 200 {
